@@ -10,7 +10,7 @@ void interrupt far Dispatcher(unsigned bp, unsigned di,unsigned si,
 										unsigned ds, unsigned es,unsigned dx,
 										unsigned cx, unsigned bx,unsigned ax);
 
-void (*program)();
+void (far *program)();
 void interrupt (*oldint80)();
 char CurDrv=-1;
 char bootdrive=0;
@@ -155,7 +155,7 @@ void SetPSP(WORD psp,char far *nome,char far *cmd)
 {
 	unsigned char far *p=(unsigned char far *)MK_FP(psp,0x0);
 	unsigned int far *opsp=(unsigned int far *)MK_FP(psp,0xE);
-	TProcessDescriptor far *pdt=(unsigned int far *)MK_FP(psp,PDT_OFS);
+	TProcessDescriptor far *pdt=(TProcessDescriptor far *)MK_FP(psp,PDT_OFS);
 	unsigned i;
 	p[0]=0xB8;p[1]=0x00;p[2]=0x00; /*mov ax,0*/
        //	p[0]=0xCB;p[1]=0x90;p[2]=0x90; /*retf;nop;nop*/
@@ -268,6 +268,7 @@ void Run(BYTE drv,char far *nome,char far *cmd)
 	CurProcess=pid;
 	Callprg();
 	CurProcess=peek(pid,0xE);
+	FecharFicheirosProcesso(pid);
 	Liberta_Segmento(pid);
 	LibertaMemPID(pid);
 }
@@ -284,15 +285,48 @@ void Dump(WORD pid)
 	}
 }
 
+int getFreeDescriptor(WORD psp)
+{
+	TProcessDescriptor far *pdt=(TProcessDescriptor far *)MK_FP(psp,PDT_OFS);
+	unsigned i;
+	for(i=0;i<PDT_N;i++)
+	{
+		if( pdt[i].idx==0xFF ) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+void setDescriptor(WORD psp, int i, BYTE idx, BYTE flags)
+{
+	TProcessDescriptor far *pdt=(TProcessDescriptor far *)MK_FP(psp,PDT_OFS);
+	if(i<0 || i>=PDT_N)
+		return;
+	pdt[i].idx=idx;
+	pdt[i].flags=flags;
+}
+
+int getDescriptorIdx(WORD psp, int i, BYTE far *flags)
+{
+	TProcessDescriptor far *pdt=(TProcessDescriptor far *)MK_FP(psp,PDT_OFS);
+	if(i<0 || i>=PDT_N)
+		return -1;
+	if(flags)
+		*flags = pdt[i].flags;
+	return pdt[i].idx;
+}
+
 
 WORD Open(BYTE far *nome,BYTE modo)
 {
 	int n=0;
 	char drive=-1;
-	char far *pdt;
 	if(CurProcess<0x0070)
 		return 0xFFFF;
-	pdt=MK_FP(CurProcess, 0x40);
+	
+	modo &= MODMASK;
+
 	while(nome[n] && nome[n]!=':') n++;
 	if(nome[n]) {
 		if(n==1) {
@@ -302,18 +336,9 @@ WORD Open(BYTE far *nome,BYTE modo)
 				case 'A': drive=0; break;
 				case 'b':
 				case 'B': drive=1; break;
+				case '#': drive=-2; break;
 			}
 			n++;
-		}
-		else {
-			if(Strncmp(nome,"dev",n)) {
-				kprintf("Open device\r\n");
-				return 0xFFFF;
-			}
-			else if(Strncmp(nome,"pipe", n)) {
-				kprintf("Open pipe (TODO)\r\n");
-				return 0xFFFF;
-			}
 		}
 	}
 	else {
@@ -322,54 +347,100 @@ WORD Open(BYTE far *nome,BYTE modo)
 	}
 
 	if(drive>=0) {
-		return AbrirFicheiro(drive,nome+n,modo);
+		int handle = getFreeDescriptor(CurProcess);
+		if(handle!=-1) {
+			WORD idx=AbrirFicheiro(drive,nome+n,modo);
+			if(idx<256) {
+				setDescriptor(CurProcess, handle, idx, REGULAR|modo);
+				return handle;
+			}
+		}
+	}
+	else if(drive==-2) {
+		/*TODO open device*/
+		return 0xFFFF;
 	}
 	return 0xFFFF;
 }
 
 void Close(handle)
 {
-	FecharFicheiro(handle);
+	BYTE flags = 0;
+	int idx = getDescriptorIdx(CurProcess, handle, &flags);
+	if( (flags & DEVMASK) == REGULAR )
+	FecharFicheiro(idx);
 }
 
 void Flush(WORD handle)
 {
-	FlushFicheiro(handle);
+	BYTE flags = 0;
+	int idx = getDescriptorIdx(CurProcess, handle, &flags);
+	if( (flags & DEVMASK) == REGULAR )
+
+	FlushFicheiro(idx);
 }
 
 WORD WriteChar(WORD handle,BYTE caracter)
 {
-	return EscreverCaracter(handle,caracter);
+	BYTE flags = 0;
+	int idx = getDescriptorIdx(CurProcess, handle, &flags);
+	if( (flags & DEVMASK) == REGULAR )
+
+	return EscreverCaracter(idx,caracter);
 }
 
 WORD ReadChar(WORD handle)
 {
-	return LerCaracter(handle);
+	BYTE flags = 0;
+	int idx = getDescriptorIdx(CurProcess, handle, &flags);
+	if( (flags & DEVMASK) == REGULAR )
+
+	return LerCaracter(idx);
 }
 
 void Seek(WORD handle, long deslocamento, BYTE modo)
 {
-	PosicionarFicheiro(handle,deslocamento,modo);
+	BYTE flags = 0;
+	int idx = getDescriptorIdx(CurProcess, handle, &flags);
+	if( (flags & DEVMASK) == REGULAR )
+
+	PosicionarFicheiro(idx,deslocamento,modo);
 }
 
 void Truncate(WORD handle)
 {
-	TruncarFicheiro(handle);
+	BYTE flags = 0;
+	int idx = getDescriptorIdx(CurProcess, handle, &flags);
+	if( (flags & DEVMASK) == REGULAR )
+
+	TruncarFicheiro(idx);
 }
 
 DWORD Position(WORD handle)
 {
-	return Ficheiro_Pos(handle);
+	BYTE flags = 0;
+	int idx = getDescriptorIdx(CurProcess, handle, &flags);
+	if( (flags & DEVMASK) == REGULAR )
+
+	return Ficheiro_Pos(idx);
 }
 
 DWORD Size(WORD handle)
 {
-	return Ficheiro_Size(handle);
+	BYTE flags = 0;
+	int idx = getDescriptorIdx(CurProcess, handle, &flags);
+	if( (flags & DEVMASK) == REGULAR )
+
+	return Ficheiro_Size(idx);
 }
 
 BYTE EndOfFile(WORD handle)
 {
-	return Fim_Ficheiro(handle);
+	BYTE flags = 0;
+	int idx = getDescriptorIdx(CurProcess, handle, &flags);
+	if( (flags & DEVMASK) == REGULAR )
+
+	return Fim_Ficheiro(idx);
 }
 
 void interrupt Dispatcher(unsigned bp, unsigned di,unsigned si,
