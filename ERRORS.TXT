@@ -1,0 +1,39 @@
+MAKE Version 3.6  Copyright (c) 1991 Borland International
+
+Available memory 15351168 bytes
+
+	tcc -mt  -omcshell.obj -c mcshell.c
+Turbo C++ Version 3.00 Copyright (c) 1992 Borland International
+mcshell.c:
+Error mcshell.c 21: Type mismatch in redeclaration of 'getcmd'
+Error mcshell.c 63: Type mismatch in redeclaration of 'set_keys'
+Error mcshell.c 75: Type mismatch in redeclaration of 'set_terminal'
+Error mcshell.c 89: Type mismatch in redeclaration of 'Cls'
+Error mcshell.c 93: Type mismatch in redeclaration of 'ChDrive'
+Error mcshell.c 115: Type mismatch in redeclaration of 'MountDrive'
+Error mcshell.c 147: Type mismatch in redeclaration of 'UnMountDrive'
+Error mcshell.c 178: Type mismatch in redeclaration of 'Info'
+Error mcshell.c 184: Type mismatch in redeclaration of 'Help'
+Error mcshell.c 189: Type mismatch in redeclaration of 'Executar'
+Error mcshell.c 207: Type mismatch in redeclaration of 'parse'
+Error mcshell.c 234: Type mismatch in redeclaration of 'Sync'
+Error mcshell.c 243: Type mismatch in redeclaration of 'showprompt'
+Error mcshell.c 254: Type mismatch in redeclaration of 'Ls'
+Error mcshell.c 328: Type mismatch in redeclaration of 'strp'
+Error mcshell.c 341: Type mismatch in redeclaration of 'escreve_erro'
+Error mcshell.c 348: Type mismatch in redeclaration of 'Ed'
+Error mcshell.c 371: Type mismatch in redeclaration of 'Type'
+Error mcshell.c 413: Type mismatch in redeclaration of 'DumpFile'
+Error mcshell.c 447: Undefined symbol 'hextab' in function DumpFile
+Warning mcshell.c 552: 'h4' is assigned a value that is never used in function DumpFile
+Warning mcshell.c 552: 'h3' is assigned a value that is never used in function DumpFile
+Warning mcshell.c 552: 'h2' is assigned a value that is never used in function DumpFile
+Warning mcshell.c 552: 'h1' is assigned a value that is never used in function DumpFile
+Error mcshell.c 556: Type mismatch in redeclaration of 'Mem'
+Error mcshell.c 585: Type mismatch in redeclaration of 'AMem'
+Error mcshell.c 592: Type mismatch in redeclaration of 'FMem'
+*** 23 errors in Compile ***
+
+	Available memory 4112164
+
+** error 1 ** deleting mcshell.obj
