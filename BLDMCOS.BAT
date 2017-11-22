@@ -1,10 +1,10 @@
 @echo off
-c:
-cd c:\many\mcos
-make -B
+m:
+cd m:\kernel
+make
 copy mcosmain.bin ..\mcos.sys
 cd ..
-mcimg
-cd mcos
+m:\bldutils\mcimg
+pause
 
 
