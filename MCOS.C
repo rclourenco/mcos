@@ -357,6 +357,7 @@ WORD Open(BYTE far *nome,BYTE modo)
 		}
 	}
 	else if(drive==-2) {
+		kprintf("[KERNEL] Open Device [%S]\r\n", nome+n );
 		/*TODO open device*/
 		return 0xFFFF;
 	}
