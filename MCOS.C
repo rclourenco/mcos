@@ -367,80 +367,115 @@ void Close(handle)
 {
 	BYTE flags = 0;
 	int idx = getDescriptorIdx(CurProcess, handle, &flags);
+	if(idx<0) {
+		return;
+	}
+
 	if( (flags & DEVMASK) == REGULAR )
-	FecharFicheiro(idx);
+		FecharFicheiro(idx);
 }
 
 void Flush(WORD handle)
 {
 	BYTE flags = 0;
 	int idx = getDescriptorIdx(CurProcess, handle, &flags);
-	if( (flags & DEVMASK) == REGULAR )
+	if(idx<0) {
+		return;
+	}
 
-	FlushFicheiro(idx);
+	if( (flags & DEVMASK) == REGULAR )
+		FlushFicheiro(idx);
 }
 
 WORD WriteChar(WORD handle,BYTE caracter)
 {
 	BYTE flags = 0;
 	int idx = getDescriptorIdx(CurProcess, handle, &flags);
-	if( (flags & DEVMASK) == REGULAR )
 
-	return EscreverCaracter(idx,caracter);
+	if(idx<0) {
+		return 0;
+	}
+
+	if( (flags & DEVMASK) == REGULAR )
+		return EscreverCaracter(idx,caracter);
+	return 0;
 }
 
 WORD ReadChar(WORD handle)
 {
 	BYTE flags = 0;
 	int idx = getDescriptorIdx(CurProcess, handle, &flags);
-	if( (flags & DEVMASK) == REGULAR )
+	if(idx<0) {
+		return 0;
+	}
 
-	return LerCaracter(idx);
+	if( (flags & DEVMASK) == REGULAR )
+		return LerCaracter(idx);
+	return 0;
 }
 
 void Seek(WORD handle, long deslocamento, BYTE modo)
 {
 	BYTE flags = 0;
 	int idx = getDescriptorIdx(CurProcess, handle, &flags);
-	if( (flags & DEVMASK) == REGULAR )
+	if(idx<0) {
+		return;
+	}
 
-	PosicionarFicheiro(idx,deslocamento,modo);
+	if( (flags & DEVMASK) == REGULAR )
+		PosicionarFicheiro(idx,deslocamento,modo);
 }
 
 void Truncate(WORD handle)
 {
 	BYTE flags = 0;
 	int idx = getDescriptorIdx(CurProcess, handle, &flags);
-	if( (flags & DEVMASK) == REGULAR )
+	if(idx<0) {
+		return;
+	}
 
-	TruncarFicheiro(idx);
+	if( (flags & DEVMASK) == REGULAR )
+		TruncarFicheiro(idx);
 }
 
 DWORD Position(WORD handle)
 {
 	BYTE flags = 0;
 	int idx = getDescriptorIdx(CurProcess, handle, &flags);
-	if( (flags & DEVMASK) == REGULAR )
 
-	return Ficheiro_Pos(idx);
+	if(idx<0) {
+		return 0L;
+	}
+
+	if( (flags & DEVMASK) == REGULAR )
+		return Ficheiro_Pos(idx);
+	return 0L;
 }
 
 DWORD Size(WORD handle)
 {
 	BYTE flags = 0;
 	int idx = getDescriptorIdx(CurProcess, handle, &flags);
-	if( (flags & DEVMASK) == REGULAR )
 
-	return Ficheiro_Size(idx);
+	if(idx<0) {
+		return 0L;
+	}
+
+	if( (flags & DEVMASK) == REGULAR )
+		return Ficheiro_Size(idx);
+	return 0L;
 }
 
 BYTE EndOfFile(WORD handle)
 {
 	BYTE flags = 0;
 	int idx = getDescriptorIdx(CurProcess, handle, &flags);
-	if( (flags & DEVMASK) == REGULAR )
+	if(idx<0) {
+		return 0;
+	}
 
-	return Fim_Ficheiro(idx);
+	if( (flags & DEVMASK) == REGULAR )
+		return Fim_Ficheiro(idx);
 }
 
 void interrupt Dispatcher(unsigned bp, unsigned di,unsigned si,
