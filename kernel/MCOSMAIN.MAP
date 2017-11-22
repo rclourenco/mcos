@@ -1,7 +1,7 @@
 
  Start  Stop   Length Name               Class
 
- 00000H 065C2H 065C3H _TEXT              CODE
+ 00000H 065C7H 065C8H _TEXT              CODE
  065D0H 06B78H 005A9H _DATA              DATA
  06B7AH 070D7H 0055EH _BSS               BSS
  070D8H 070D8H 00000H _BSSEND            STACK
@@ -15,9 +15,9 @@ Detailed map of segments
  0000:0BD6 05F7 C=CODE   S=_TEXT          G=DGROUP  M=mcosmem.c  ACBP=28
  0000:11CD 2969 C=CODE   S=_TEXT          G=DGROUP  M=fsystem.c  ACBP=28
  0000:3B36 0E9D C=CODE   S=_TEXT          G=DGROUP  M=mcosterm.c ACBP=28
- 0000:49D3 0C70 C=CODE   S=_TEXT          G=DGROUP  M=mcos.c     ACBP=28
- 0000:5643 0EE9 C=CODE   S=_TEXT          G=DGROUP  M=mcshell.c  ACBP=28
- 0000:652C 0097 C=CODE   S=_TEXT          G=DGROUP  M=mcosmain.c ACBP=28
+ 0000:49D3 0C75 C=CODE   S=_TEXT          G=DGROUP  M=mcos.c     ACBP=28
+ 0000:5648 0EE9 C=CODE   S=_TEXT          G=DGROUP  M=mcshell.c  ACBP=28
+ 0000:6531 0097 C=CODE   S=_TEXT          G=DGROUP  M=mcosmain.c ACBP=28
  0000:65D0 004B C=DATA   S=_DATA          G=DGROUP  M=startbin.ASM ACBP=68
  0000:661C 0019 C=DATA   S=_DATA          G=DGROUP  M=mcoslib.c  ACBP=48
  0000:6636 00EE C=DATA   S=_DATA          G=DGROUP  M=fserror.c  ACBP=48
@@ -61,7 +61,7 @@ Detailed map of segments
  0000:245A idle  _AlocaCluster
  0000:1A5A idle  _AlocaMemoria
  0000:0EDE       _Aloca_Segmento
- 0000:6502 idle  _AMem
+ 0000:6507 idle  _AMem
  0000:11CD       _ApagaErro
  0000:6F4A idle  _argumento
  0000:01E8 idle  _bcd2bin
@@ -72,11 +72,11 @@ Detailed map of segments
  0000:4A98 idle  _Callprg
  0000:40D3       _Char_Output
  0000:40F7       _Char_TTOutput
- 0000:58C3 idle  _ChDrive
+ 0000:58C8 idle  _ChDrive
  0000:153B       _Chmod
  0000:4FE6 idle  _Close
  0000:1B58       _CLOSEFS
- 0000:58B4 idle  _Cls
+ 0000:58B9 idle  _Cls
  0000:6FCA idle  _comando
  0000:174C       _CriarFicheiro
  0000:673C       _CurDrv
@@ -89,10 +89,10 @@ Detailed map of segments
  0000:51F4 idle  _Dispatcher
  0000:6B8C idle  _Drive
  0000:4DA5 idle  _Dump
- 0000:60B0 idle  _DumpFile
- 0000:6556 idle  _dump_mem
+ 0000:60B5 idle  _DumpFile
+ 0000:655B idle  _dump_mem
  0000:0B60 idle  _dump_mem2
- 0000:5F78 idle  _Ed
+ 0000:5F7D idle  _Ed
  0000:1200       _Eliminar
  0000:51BB idle  _EndOfFile
  0000:6603 idle  _environ
@@ -102,9 +102,9 @@ Detailed map of segments
  0000:3054 idle  _EscreverCluster
  0000:214F       _EscreverSector
  0000:395C idle  _EscreverSectorFisico
- 0000:5F50 idle  _escreve_erro
- 0000:5AAB idle  _Executar
- 0000:652C       _exit
+ 0000:5F55 idle  _escreve_erro
+ 0000:5AB0 idle  _Executar
+ 0000:6531       _exit
  0000:4A72 idle  _Exit_Process
  0000:0DFC idle  _farmemcp
  0000:29C8       _FecharFicheiro
@@ -115,11 +115,11 @@ Detailed map of segments
  0000:131A       _Fim_Ficheiro
  0000:501B idle  _Flush
  0000:2AF4       _FlushFicheiro
- 0000:651F idle  _FMem
+ 0000:6524 idle  _FMem
  0000:37A4 idle  _FreeClusters
  0000:37F9       _FreeSpace
  0000:15CB       _GetAttr
- 0000:5651 idle  _getcmd
+ 0000:5656 idle  _getcmd
  0000:013E       _GetDate
  0000:4E85 idle  _getDescriptorIdx
  0000:165C idle  _GetEntrada
@@ -134,9 +134,9 @@ Detailed map of segments
  0000:1022 idle  _GetProcessLabel
  0000:0E4C idle  _Get_Bloco
  0000:3BCB       _Get_Str
- 0000:5A9C idle  _Help
+ 0000:5AA1 idle  _Help
  0000:661C       _hextab
- 0000:5A83 idle  _Info
+ 0000:5A88 idle  _Info
  0000:1AC2       _INITFS
  0000:6FD7 idle  _input
  0000:055F idle  _ins
@@ -156,9 +156,9 @@ Detailed map of segments
  0000:4C09 idle  _Load
  0000:09BC idle  _longmul
  0000:0A5A       _longmul2
- 0000:5BE3 idle  _Ls
- 0000:659C       _main
- 0000:63FE idle  _Mem
+ 0000:5BE8 idle  _Ls
+ 0000:65A1       _main
+ 0000:6403 idle  _Mem
  0000:0BD6 idle  _MEM_Copy
  0000:0DAE       _MEM_Done
  0000:6B7A idle  _MEM_End
@@ -174,7 +174,7 @@ Detailed map of segments
  0000:46C4 idle  _ModoVideo
  0000:11D8       _Montada
  0000:1BA6       _MontarDrive
- 0000:5944 idle  _MountDrive
+ 0000:5949 idle  _MountDrive
  0000:6636 idle  _MsgErro
  0000:4829 idle  _NewKeyInt
  0000:25B7 idle  _NomeFicheiroCmp
@@ -182,8 +182,8 @@ Detailed map of segments
  0000:6F42 idle  _oldint80
  0000:6BD2 idle  _OldKeyInt
  0000:4ED8 idle  _Open
- 0000:5B1D idle  _parse
- 0000:653C       _pong
+ 0000:5B22 idle  _parse
+ 0000:6541       _pong
  0000:344E       _PosicionarFicheiro
  0000:5141 idle  _Position
  0000:025A idle  _power
@@ -204,12 +204,12 @@ Detailed map of segments
  0000:3C7B       _SetIntVect
  0000:25F1 idle  _SetNomeEntrada
  0000:4AF2 idle  _SetPSP
- 0000:65B1 idle  _SetupMemory
+ 0000:65B6 idle  _SetupMemory
  0000:0E21 idle  _Set_Bloco
- 0000:5809 idle  _set_keys
- 0000:5854 idle  _set_terminal
- 0000:5643       _shell
- 0000:5BBF idle  _showprompt
+ 0000:580E idle  _set_keys
+ 0000:5859 idle  _set_terminal
+ 0000:5648       _shell
+ 0000:5BC4 idle  _showprompt
  0000:517E idle  _Size
  0000:03D9       _Strcmp
  0000:04BC idle  _Strcmpx
@@ -218,8 +218,8 @@ Detailed map of segments
  0000:03C0       _Strlen
  0000:04A3       _Strlenx
  0000:042C idle  _Strncmp
- 0000:5EE7 idle  _strp
- 0000:5B8C idle  _Sync
+ 0000:5EEC idle  _strp
+ 0000:5B91 idle  _Sync
  0000:2317       _SyncDrive
  0000:4A51       _System_Done
  0000:49D3       _System_Init
@@ -270,8 +270,8 @@ Detailed map of segments
  0000:4CF1 idle  _TestValidPsp
  0000:3673       _TruncarFicheiro
  0000:510C idle  _Truncate
- 0000:5FE4 idle  _Type
- 0000:59CF idle  _UnMountDrive
+ 0000:5FE9 idle  _Type
+ 0000:59D4 idle  _UnMountDrive
  0000:19A9 idle  _UnPacked_Data
  0000:1A22 idle  _UnPacked_Hora
  0000:297B idle  _VerificarAberto
@@ -480,34 +480,34 @@ Detailed map of segments
  0000:517E idle  _Size
  0000:51BB idle  _EndOfFile
  0000:51F4 idle  _Dispatcher
- 0000:5643       _shell
- 0000:5651 idle  _getcmd
- 0000:5809 idle  _set_keys
- 0000:5854 idle  _set_terminal
- 0000:58B4 idle  _Cls
- 0000:58C3 idle  _ChDrive
- 0000:5944 idle  _MountDrive
- 0000:59CF idle  _UnMountDrive
- 0000:5A83 idle  _Info
- 0000:5A9C idle  _Help
- 0000:5AAB idle  _Executar
- 0000:5B1D idle  _parse
- 0000:5B8C idle  _Sync
- 0000:5BBF idle  _showprompt
- 0000:5BE3 idle  _Ls
- 0000:5EE7 idle  _strp
- 0000:5F50 idle  _escreve_erro
- 0000:5F78 idle  _Ed
- 0000:5FE4 idle  _Type
- 0000:60B0 idle  _DumpFile
- 0000:63FE idle  _Mem
- 0000:6502 idle  _AMem
- 0000:651F idle  _FMem
- 0000:652C       _exit
- 0000:653C       _pong
- 0000:6556 idle  _dump_mem
- 0000:659C       _main
- 0000:65B1 idle  _SetupMemory
+ 0000:5648       _shell
+ 0000:5656 idle  _getcmd
+ 0000:580E idle  _set_keys
+ 0000:5859 idle  _set_terminal
+ 0000:58B9 idle  _Cls
+ 0000:58C8 idle  _ChDrive
+ 0000:5949 idle  _MountDrive
+ 0000:59D4 idle  _UnMountDrive
+ 0000:5A88 idle  _Info
+ 0000:5AA1 idle  _Help
+ 0000:5AB0 idle  _Executar
+ 0000:5B22 idle  _parse
+ 0000:5B91 idle  _Sync
+ 0000:5BC4 idle  _showprompt
+ 0000:5BE8 idle  _Ls
+ 0000:5EEC idle  _strp
+ 0000:5F55 idle  _escreve_erro
+ 0000:5F7D idle  _Ed
+ 0000:5FE9 idle  _Type
+ 0000:60B5 idle  _DumpFile
+ 0000:6403 idle  _Mem
+ 0000:6507 idle  _AMem
+ 0000:6524 idle  _FMem
+ 0000:6531       _exit
+ 0000:6541       _pong
+ 0000:655B idle  _dump_mem
+ 0000:65A1       _main
+ 0000:65B6 idle  _SetupMemory
  0000:65FF idle  __argc
  0000:6601 idle  __argv
  0000:6603 idle  _environ

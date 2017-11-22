@@ -1,0 +1,157 @@
+
+ Start  Stop   Length Name               Class
+
+ 00000H 008B3H 008B4H _TEXT              CODE
+ 008C0H 00A31H 00172H _DATA              DATA
+ 00A32H 00B35H 00104H _BSS               BSS
+ 00B36H 00B36H 00000H _BSSEND            STACK
+
+
+Detailed map of segments
+
+ 0000:0000 0221 C=CODE   S=_TEXT          G=DGROUP  M=mcosc0.ASM ACBP=28
+ 0000:0221 0337 C=CODE   S=_TEXT          G=DGROUP  M=mcosapi.c  ACBP=28
+ 0000:0558 035C C=CODE   S=_TEXT          G=DGROUP  M=test.c     ACBP=28
+ 0000:08C0 0056 C=DATA   S=_DATA          G=DGROUP  M=mcosc0.ASM ACBP=68
+ 0000:0916 001A C=DATA   S=_DATA          G=DGROUP  M=mcosapi.c  ACBP=48
+ 0000:0930 0102 C=DATA   S=_DATA          G=DGROUP  M=test.c     ACBP=48
+ 0000:0A32 0000 C=BSS    S=_BSS           G=DGROUP  M=mcosc0.ASM ACBP=48
+ 0000:0A32 0100 C=BSS    S=_BSS           G=DGROUP  M=mcosapi.c  ACBP=48
+ 0000:0B32 0004 C=BSS    S=_BSS           G=DGROUP  M=test.c     ACBP=48
+ 0000:0B36 0000 C=STACK  S=_BSSEND        G=DGROUP  M=mcosc0.ASM ACBP=28
+
+  Address         Publics by Name
+
+ 0000:021F idle  DGROUP@
+ 0000:0174 idle  F_LDIV@
+ 0000:0183 idle  F_LMOD@
+ 0000:017B idle  F_LUDIV@
+ 0000:018B idle  F_LUMOD@
+ 0000:0174 idle  LDIV@
+ 0000:0183 idle  LMOD@
+ 0000:017B idle  LUDIV@
+ 0000:018B idle  LUMOD@
+ 0000:0171 idle  N_LDIV@
+ 0000:0180 idle  N_LMOD@
+ 0000:0178 idle  N_LUDIV@
+ 0000:0188 idle  N_LUMOD@
+ 0000:015A idle  N_LXMUL@
+ 0000:013E idle  N_SCOPY@
+ 0000:0918 idle  _args
+ 0000:0AB2 idle  _argtab
+ 0000:0B32 idle  _blines
+ 0000:072D idle  _copyfile
+ 0000:091A idle  _curdrv
+ 0000:08FC idle  _environ
+ 0000:0908 idle  _errno
+ 0000:05F5 idle  _fmalloc
+ 0000:091C idle  _hextab
+ 0000:0782 idle  _initialize_serial
+ 0000:0817       _main
+ 0000:037F       _mcos_alloc
+ 0000:02B3 idle  _mcos_clearerr
+ 0000:02F2       _mcos_close
+ 0000:02FE idle  _mcos_eof
+ 0000:02BC idle  _mcos_error
+ 0000:0333       _mcos_fgetc
+ 0000:0317       _mcos_fputc
+ 0000:0358 idle  _mcos_getchar
+ 0000:0369       _mcos_getkey
+ 0000:0221       _mcos_makeargs
+ 0000:02D2       _mcos_open
+ 0000:02A3 idle  _mcos_print
+ 0000:034C       _mcos_putchar
+ 0000:0916 idle  _prgname
+ 0000:049A       _printf
+ 0000:0A32 idle  _sargs
+ 0000:07B9 idle  _sendfile
+ 0000:079D idle  _send_serial
+ 0000:0558 idle  _typefile
+ 0000:0640 idle  _typefile2
+ 0000:039F idle  _writehex
+ 0000:0418 idle  _writenum
+ 0000:090A idle  __8087
+ 0000:08F8       __argc
+ 0000:08FA       __argv
+ 0000:08FE idle  __envLng
+ 0000:0900 idle  __envseg
+ 0000:0902 idle  __envSize
+ 0000:0135 idle  __exit
+ 0000:0906 idle  __osmajor
+ 0000:0907 idle  __osminor
+ 0000:0904 idle  __psp
+ 0000:090C idle  __StartTime
+ 0000:0906 idle  __version
+ 0000:0912 idle  ___brklvl
+ 0000:0910 idle  ___heapbase
+ 0000:0914 idle  ___heaptop
+
+  Address         Publics by Value
+
+ 0000:0135 idle  __exit
+ 0000:013E idle  N_SCOPY@
+ 0000:015A idle  N_LXMUL@
+ 0000:0171 idle  N_LDIV@
+ 0000:0174 idle  LDIV@
+ 0000:0174 idle  F_LDIV@
+ 0000:0178 idle  N_LUDIV@
+ 0000:017B idle  F_LUDIV@
+ 0000:017B idle  LUDIV@
+ 0000:0180 idle  N_LMOD@
+ 0000:0183 idle  F_LMOD@
+ 0000:0183 idle  LMOD@
+ 0000:0188 idle  N_LUMOD@
+ 0000:018B idle  LUMOD@
+ 0000:018B idle  F_LUMOD@
+ 0000:021F idle  DGROUP@
+ 0000:0221       _mcos_makeargs
+ 0000:02A3 idle  _mcos_print
+ 0000:02B3 idle  _mcos_clearerr
+ 0000:02BC idle  _mcos_error
+ 0000:02D2       _mcos_open
+ 0000:02F2       _mcos_close
+ 0000:02FE idle  _mcos_eof
+ 0000:0317       _mcos_fputc
+ 0000:0333       _mcos_fgetc
+ 0000:034C       _mcos_putchar
+ 0000:0358 idle  _mcos_getchar
+ 0000:0369       _mcos_getkey
+ 0000:037F       _mcos_alloc
+ 0000:039F idle  _writehex
+ 0000:0418 idle  _writenum
+ 0000:049A       _printf
+ 0000:0558 idle  _typefile
+ 0000:05F5 idle  _fmalloc
+ 0000:0640 idle  _typefile2
+ 0000:072D idle  _copyfile
+ 0000:0782 idle  _initialize_serial
+ 0000:079D idle  _send_serial
+ 0000:07B9 idle  _sendfile
+ 0000:0817       _main
+ 0000:08F8       __argc
+ 0000:08FA       __argv
+ 0000:08FC idle  _environ
+ 0000:08FE idle  __envLng
+ 0000:0900 idle  __envseg
+ 0000:0902 idle  __envSize
+ 0000:0904 idle  __psp
+ 0000:0906 idle  __osmajor
+ 0000:0906 idle  __version
+ 0000:0907 idle  __osminor
+ 0000:0908 idle  _errno
+ 0000:090A idle  __8087
+ 0000:090C idle  __StartTime
+ 0000:0910 idle  ___heapbase
+ 0000:0912 idle  ___brklvl
+ 0000:0914 idle  ___heaptop
+ 0000:0916 idle  _prgname
+ 0000:0918 idle  _args
+ 0000:091A idle  _curdrv
+ 0000:091C idle  _hextab
+ 0000:0A32 idle  _sargs
+ 0000:0AB2 idle  _argtab
+ 0000:0B32 idle  _blines
+
+Program entry point at 0000:0100
+Warning: No stack
+

@@ -519,7 +519,7 @@ void interrupt Dispatcher(unsigned bp, unsigned di,unsigned si,
 		case 1:Term_Output(al);break;
 		case 2:Char_Output(al);break;
 		case 3:Char_TTOutput(al);break;
-		case 4:al=Term_Input();break;
+		case 4:ax=Term_Input();break;
 		case 5:Term_Flush();break;
 		case 6:Get_Str((char far *)MK_FP(es,dx));break;
 		case 7:send_str((char far *)MK_FP(es,dx));break;
@@ -548,8 +548,8 @@ void interrupt Dispatcher(unsigned bp, unsigned di,unsigned si,
 		case 25:ax=MontarDrive(al);break;
 		case 26:ax=DesMontarDrive(al);break;
 		case 27:ax=SyncDrive(al);break;
-		case 28:al=Montada(al);break;
-		case 29:al=DirProcura(al,(TDIR_RECORD far *)MK_FP(es,dx),bl);break;
+		case 28:ax=Montada(al);break;
+		case 29:ax=DirProcura(al,(TDIR_RECORD far *)MK_FP(es,dx),bl);break;
 		
 		case 30:ax=AbrirFicheiro(al,(BYTE far *)MK_FP(es,dx),bl);break; // TODO deal with devices
 		case 31:ax=EscreverCaracter(bx,al);break; 
@@ -564,13 +564,15 @@ void interrupt Dispatcher(unsigned bp, unsigned di,unsigned si,
 					dx=l1;
 					cx=l1>>16;
 			break;
-		case 37:al=Fim_Ficheiro(bx);break;
+		case 37:ax=Fim_Ficheiro(bx);
+		        break;
 		case 38:TruncarFicheiro(bx);break;
 		
 		case 39:CriarFicheiro(al,(BYTE far *)MK_FP(es,dx),bl);break;
 		case 40:Renomear(al,(BYTE far *)MK_FP(es,dx),(BYTE far *)MK_FP(bx,cx));break;
 		case 41:Eliminar(al,(BYTE far *)MK_FP(es,dx));break;
-		case 42:al=GetAttr(al,(BYTE far *)MK_FP(es,dx));break;
+		case 42:ax=GetAttr(al,(BYTE far *)MK_FP(es,dx));
+		        break;
 		case 43:Chmod(al,(BYTE far *)MK_FP(es,dx),bl);break;
 		case 44:l1=FreeSpace(al);
 				dx=l1;
@@ -580,8 +582,9 @@ void interrupt Dispatcher(unsigned bp, unsigned di,unsigned si,
 				dx=l1;
 				cx=l1>>16;
 			break;
-		case 46:al=LerSector(al,bx,MK_FP(es,dx));break;
-		case 47:al=EscreverSector(al,bx,MK_FP(es,dx));break;
+		case 46:ax=LerSector(al,bx,MK_FP(es,dx));
+		        break;
+		case 47:ax=EscreverSector(al,bx,MK_FP(es,dx));break;
 		case 48:ax=ERRO;break;
 		case 49:ApagaErro();break;
 		case 50:p=(void far *)GetMsgErro(bx);
@@ -608,7 +611,7 @@ void interrupt Dispatcher(unsigned bp, unsigned di,unsigned si,
 					dx=l1;
 					cx=l1>>16;
 			break;
-		case 87:al=EndOfFile(bx);break;
+		case 87:ax=EndOfFile(bx);break;
 		case 88:Truncate(bx);break;
 
 		

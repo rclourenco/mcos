@@ -150,6 +150,7 @@ char mcos_getchar()
 		int 80h;
 		mov r,al;
 	}
+	return r;
 }
 
 
@@ -243,7 +244,7 @@ void printf(char *str,...)
           case 'i':
           case 'u': writenum(*ptr); ptr++;
             break;
-		  case 's': mcos_print((char *)*ptr); ptr++; break;
+          case 's': mcos_print((char *)*ptr); ptr++; break;
           case 'c': mcos_putchar(*ptr); ptr++; break;
          }
         st=0;
@@ -252,3 +253,65 @@ void printf(char *str,...)
     str++;
   }
 }
+
+
+unsigned strlen(char *s)
+{
+	unsigned i=0;
+	while(s[i])
+		i++;
+	return i;
+}
+
+int strcmp(char *s1,char *s2)
+{
+	unsigned a,b;
+	a=strlen(s1);
+	b=strlen(s2);
+	if(a!=b)
+		return 1;
+	a=0;
+	while(s1[a])
+	{
+		if(s1[a]!=s2[a])
+			return 1;
+		a++;
+	}
+	return 0;
+}
+
+int strncmp(char *s1,char *s2, unsigned b)
+{
+	unsigned a;
+	a=0;
+	while(s1[a] && a<b)
+	{
+		if(s1[a]!=s2[a])
+			return 1;
+		a++;
+	}
+	return 0;
+}
+
+void strcpy(char *dest,char *or)
+{
+	unsigned x;
+	x=0;
+	do
+	{
+		dest[x]=or[x];
+	}while(or[x++]);
+}
+
+
+void strncpy(char *dest,char *org, unsigned b)
+{
+	unsigned x;
+	x=0;
+	while(org[x] && x<b)
+	{
+		dest[x]=org[x];
+		x++;
+	};
+}
+

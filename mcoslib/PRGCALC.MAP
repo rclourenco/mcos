@@ -1,0 +1,207 @@
+
+ Start  Stop   Length Name               Class
+
+ 00000H 014E0H 014E1H _TEXT              CODE
+ 014F0H 01791H 002A2H _DATA              DATA
+ 01792H 05289H 03AF8H _BSS               BSS
+ 0528AH 0528AH 00000H _BSSEND            STACK
+
+
+Detailed map of segments
+
+ 0000:0000 0221 C=CODE   S=_TEXT          G=DGROUP  M=mcosc0.ASM ACBP=28
+ 0000:0221 0413 C=CODE   S=_TEXT          G=DGROUP  M=mcosapi.c  ACBP=28
+ 0000:0634 0EAD C=CODE   S=_TEXT          G=DGROUP  M=calc.c     ACBP=28
+ 0000:14F0 0056 C=DATA   S=_DATA          G=DGROUP  M=mcosc0.ASM ACBP=68
+ 0000:1546 001A C=DATA   S=_DATA          G=DGROUP  M=mcosapi.c  ACBP=48
+ 0000:1560 0232 C=DATA   S=_DATA          G=DGROUP  M=calc.c     ACBP=48
+ 0000:1792 0000 C=BSS    S=_BSS           G=DGROUP  M=mcosc0.ASM ACBP=48
+ 0000:1792 0100 C=BSS    S=_BSS           G=DGROUP  M=mcosapi.c  ACBP=48
+ 0000:1892 39F8 C=BSS    S=_BSS           G=DGROUP  M=calc.c     ACBP=48
+ 0000:528A 0000 C=STACK  S=_BSSEND        G=DGROUP  M=mcosc0.ASM ACBP=28
+
+  Address         Publics by Name
+
+ 0000:021F idle  DGROUP@
+ 0000:0174 idle  F_LDIV@
+ 0000:0183 idle  F_LMOD@
+ 0000:017B idle  F_LUDIV@
+ 0000:018B idle  F_LUMOD@
+ 0000:0174 idle  LDIV@
+ 0000:0183 idle  LMOD@
+ 0000:017B idle  LUDIV@
+ 0000:018B idle  LUMOD@
+ 0000:0171 idle  N_LDIV@
+ 0000:0180 idle  N_LMOD@
+ 0000:0178 idle  N_LUDIV@
+ 0000:0188 idle  N_LUMOD@
+ 0000:015A idle  N_LXMUL@
+ 0000:013E idle  N_SCOPY@
+ 0000:1010 idle  _antof
+ 0000:1548 idle  _args
+ 0000:1812 idle  _argtab
+ 0000:0F3B idle  _aton
+ 0000:1C86 idle  _buffer
+ 0000:103B idle  _call_function
+ 0000:154A idle  _curdrv
+ 0000:140D idle  _define_var
+ 0000:0A03 idle  _dump_rpn
+ 0000:0AD0 idle  _dump_tokens
+ 0000:152C idle  _environ
+ 0000:1538 idle  _errno
+ 0000:1223 idle  _eval_rpn
+ 0000:1A22 idle  _fstk
+ 0000:14BE idle  _get_var
+ 0000:154C idle  _hextab
+ 0000:0B8F idle  _iq_init
+ 0000:0BE0 idle  _iq_pop
+ 0000:0BA6 idle  _iq_push
+ 0000:0BBF idle  _iq_top
+ 0000:0671       _main
+ 0000:0384 idle  _mcos_alloc
+ 0000:02B3 idle  _mcos_clearerr
+ 0000:02F2 idle  _mcos_close
+ 0000:02FE idle  _mcos_eof
+ 0000:02BC idle  _mcos_error
+ 0000:0333 idle  _mcos_fgetc
+ 0000:0317 idle  _mcos_fputc
+ 0000:0358       _mcos_getchar
+ 0000:036E idle  _mcos_getkey
+ 0000:0221       _mcos_makeargs
+ 0000:02D2 idle  _mcos_open
+ 0000:02A3 idle  _mcos_print
+ 0000:034C idle  _mcos_putchar
+ 0000:1560 idle  _nvariables
+ 0000:112E idle  _operation
+ 0000:0F0A idle  _op_a
+ 0000:0EA2 idle  _op_p
+ 0000:1546 idle  _prgname
+ 0000:049F       _printf
+ 0000:0634 idle  _read_line
+ 0000:0C04 idle  _reverse_polish_notation
+ 0000:1BBA idle  _rpn
+ 0000:1792 idle  _sargs
+ 0000:148B idle  _set_var
+ 0000:1562 idle  _sp
+ 0000:1892 idle  _stack
+ 0000:0575       _strcmp
+ 0000:05EF       _strcpy
+ 0000:055D idle  _strlen
+ 0000:05BE idle  _strncmp
+ 0000:060E       _strncpy
+ 0000:0745 idle  _tokenize
+ 0000:1D06 idle  _tokenlist
+ 0000:1FC2 idle  _variables
+ 0000:03A4 idle  _writehex
+ 0000:041D idle  _writenum
+ 0000:1AEE idle  _wstk
+ 0000:153A idle  __8087
+ 0000:1528       __argc
+ 0000:152A       __argv
+ 0000:152E idle  __envLng
+ 0000:1530 idle  __envseg
+ 0000:1532 idle  __envSize
+ 0000:0135 idle  __exit
+ 0000:1536 idle  __osmajor
+ 0000:1537 idle  __osminor
+ 0000:1534 idle  __psp
+ 0000:153C idle  __StartTime
+ 0000:1536 idle  __version
+ 0000:1542 idle  ___brklvl
+ 0000:1540 idle  ___heapbase
+ 0000:1544 idle  ___heaptop
+
+  Address         Publics by Value
+
+ 0000:0135 idle  __exit
+ 0000:013E idle  N_SCOPY@
+ 0000:015A idle  N_LXMUL@
+ 0000:0171 idle  N_LDIV@
+ 0000:0174 idle  LDIV@
+ 0000:0174 idle  F_LDIV@
+ 0000:0178 idle  N_LUDIV@
+ 0000:017B idle  F_LUDIV@
+ 0000:017B idle  LUDIV@
+ 0000:0180 idle  N_LMOD@
+ 0000:0183 idle  F_LMOD@
+ 0000:0183 idle  LMOD@
+ 0000:0188 idle  N_LUMOD@
+ 0000:018B idle  LUMOD@
+ 0000:018B idle  F_LUMOD@
+ 0000:021F idle  DGROUP@
+ 0000:0221       _mcos_makeargs
+ 0000:02A3 idle  _mcos_print
+ 0000:02B3 idle  _mcos_clearerr
+ 0000:02BC idle  _mcos_error
+ 0000:02D2 idle  _mcos_open
+ 0000:02F2 idle  _mcos_close
+ 0000:02FE idle  _mcos_eof
+ 0000:0317 idle  _mcos_fputc
+ 0000:0333 idle  _mcos_fgetc
+ 0000:034C idle  _mcos_putchar
+ 0000:0358       _mcos_getchar
+ 0000:036E idle  _mcos_getkey
+ 0000:0384 idle  _mcos_alloc
+ 0000:03A4 idle  _writehex
+ 0000:041D idle  _writenum
+ 0000:049F       _printf
+ 0000:055D idle  _strlen
+ 0000:0575       _strcmp
+ 0000:05BE idle  _strncmp
+ 0000:05EF       _strcpy
+ 0000:060E       _strncpy
+ 0000:0634 idle  _read_line
+ 0000:0671       _main
+ 0000:0745 idle  _tokenize
+ 0000:0A03 idle  _dump_rpn
+ 0000:0AD0 idle  _dump_tokens
+ 0000:0B8F idle  _iq_init
+ 0000:0BA6 idle  _iq_push
+ 0000:0BBF idle  _iq_top
+ 0000:0BE0 idle  _iq_pop
+ 0000:0C04 idle  _reverse_polish_notation
+ 0000:0EA2 idle  _op_p
+ 0000:0F0A idle  _op_a
+ 0000:0F3B idle  _aton
+ 0000:1010 idle  _antof
+ 0000:103B idle  _call_function
+ 0000:112E idle  _operation
+ 0000:1223 idle  _eval_rpn
+ 0000:140D idle  _define_var
+ 0000:148B idle  _set_var
+ 0000:14BE idle  _get_var
+ 0000:1528       __argc
+ 0000:152A       __argv
+ 0000:152C idle  _environ
+ 0000:152E idle  __envLng
+ 0000:1530 idle  __envseg
+ 0000:1532 idle  __envSize
+ 0000:1534 idle  __psp
+ 0000:1536 idle  __osmajor
+ 0000:1536 idle  __version
+ 0000:1537 idle  __osminor
+ 0000:1538 idle  _errno
+ 0000:153A idle  __8087
+ 0000:153C idle  __StartTime
+ 0000:1540 idle  ___heapbase
+ 0000:1542 idle  ___brklvl
+ 0000:1544 idle  ___heaptop
+ 0000:1546 idle  _prgname
+ 0000:1548 idle  _args
+ 0000:154A idle  _curdrv
+ 0000:154C idle  _hextab
+ 0000:1560 idle  _nvariables
+ 0000:1562 idle  _sp
+ 0000:1792 idle  _sargs
+ 0000:1812 idle  _argtab
+ 0000:1892 idle  _stack
+ 0000:1A22 idle  _fstk
+ 0000:1AEE idle  _wstk
+ 0000:1BBA idle  _rpn
+ 0000:1C86 idle  _buffer
+ 0000:1D06 idle  _tokenlist
+ 0000:1FC2 idle  _variables
+
+Program entry point at 0000:0100
+Warning: No stack
+
