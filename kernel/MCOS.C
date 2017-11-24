@@ -10,8 +10,13 @@ void interrupt far Dispatcher(unsigned bp, unsigned di,unsigned si,
 										unsigned ds, unsigned es,unsigned dx,
 										unsigned cx, unsigned bx,unsigned ax);
 
+void interrupt far CtrlBreak(unsigned bp, unsigned di,unsigned si,
+										unsigned ds, unsigned es,unsigned dx,
+										unsigned cx, unsigned bx,unsigned ax);
+
 void (far *program)();
 void interrupt (*oldint80)();
+void interrupt (*oldint1B)();
 char CurDrv=-1;
 char bootdrive=0;
 unsigned CurProcess=0;
@@ -50,6 +55,9 @@ void System_Init()
 	asm cli;
 	oldint80=GetIntVect(0x80);
 	SetIntVect(0x80,Dispatcher);
+
+//	oldint1B=GetIntVect(0x1B);
+//	SetIntVect(0x1B,CtrlBreak);
 	asm sti;
 }
 
@@ -57,6 +65,7 @@ void System_Done()
 {
   asm cli;
 	SetIntVect(0x80,oldint80);
+//	SetIntVect(0x1B,oldint1B);
   asm sti;
 
 	//kprintf("Syscall interrupt Shutdown.........[DONE]\r\n");
@@ -66,6 +75,43 @@ void System_Done()
 	//kprintf("File System Shutdown...............[DONE]\r\n");
 	MEM_Done();
 	//kprintf("Memory System Shutdown.............[DONE]\r\n");
+}
+
+void interrupt far CtrlBreak(unsigned bp, unsigned di,unsigned si,
+										unsigned ds, unsigned es,unsigned dx,
+										unsigned cx, unsigned bx,unsigned ax)
+{
+  unsigned char d;
+  if(CurProcess > 0x70) {
+    ModoVideo(3);
+    kprintf( "Terminate called\r\n" );
+    kprintf( "SS:SP %x:%x\r\n", _SS, _SP);
+    kprintf( "DS ES %x:%x\r\n", _DS, _ES);
+    asm in al, 0x21;
+    asm mov al,d;
+    kprintf( "MASK %x\r\n",d);
+    asm mov al, 0x20;
+    asm out 0x20,al;
+    //outportb (0x20, 0x20)
+    Exit_Process();
+  }
+  else{
+    kprintf( "Nothing to kill\r\n" );
+    asm in al, 0x21;
+    asm mov al,d;
+    kprintf( "MASK %x\r\n",d);
+  }
+}
+
+void kill_proc()
+{
+  if(CurProcess > 0x70) {
+    ModoVideo(3);
+    kprintf( "Terminate called\r\n" );
+    kprintf( "SS:SP %x:%x\r\n", _SS, _SP);
+    kprintf( "DS ES %x:%x\r\n", _DS, _ES);
+    Exit_Process();
+  }
 }
 
 void Exit_Process()

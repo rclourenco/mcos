@@ -638,10 +638,15 @@ void Term_CursorB()
 void interrupt far NewKeyInt(void)
 {
 	unsigned char a,i,t;
-	unsigned b,w;
-
+	unsigned b,w,x;
 	b=peek(0x0040,0x001C);
+	asm cli;
+	x=peek(0x0040,0x0071);
+	x=x&0x7F;
+	poke(0x0040,0x0071,x);
+	asm sti;
 	OldKeyInt();
+	x=peek(0x0040,0x0071);
 	asm cli;
 	w=peek(0x0040,b);
 	t=0;
@@ -669,7 +674,6 @@ void interrupt far NewKeyInt(void)
 		case 0x4FE0:i=19;t=Term_KeyBuffer[i][0];break;//End
 		case 0x49E0:i=20;t=Term_KeyBuffer[i][0];break;//PgUp
 		case 0x51E0:i=21;t=Term_KeyBuffer[i][0];break;//PgDown
-
 	}
 	for(a=0;a<t;a++)
 	{
@@ -679,4 +683,7 @@ void interrupt far NewKeyInt(void)
 		poke(0x0040,0x001C,b);
 	}
 	asm sti;
+	if(x&0x80) {
+	  kill_proc();
+	}
 }

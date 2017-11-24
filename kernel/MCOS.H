@@ -69,6 +69,7 @@ void Run(BYTE drv,char far *nome,char far *cmd);
 void Callprg();
 void Dump(WORD pid);
 void Exit_Process();
+void kill_proc();
 void System_Init();
 void System_Done();
 
