@@ -12,6 +12,64 @@ extern char **_argv;
 char *argtab[64];
 char sargs[128];
 
+unsigned key_last=0;
+unsigned key_pending=0;
+
+void far *GetIntVect(unsigned char i)
+{
+	void far *ia;
+	ia=MK_FP(peek(0,i*4+2),peek(0,i*4));
+	return ia;
+}
+
+void SetIntVect(unsigned char i,void far *p)
+{
+	asm cli;
+	poke(0,i*4+2,FP_SEG(p));
+	poke(0,i*4,FP_OFF(p));
+	asm sti;
+}
+
+
+void exit()
+{
+	asm {
+		mov ah,0h;
+		int 80h;
+	}
+}
+
+int getch()
+{
+	if(key_pending) {
+		key_pending = 0;
+		return key_last >> 8;
+	}
+	key_last = mcos_getkey();
+	if((key_last&0xFF)==0) {
+		key_pending = 1;
+	}
+	
+	return key_last&0xFF;
+}
+
+int kbhit()
+{
+	int k=1;
+	if(key_pending)
+		return 1;
+	asm {
+		mov ah,01h;
+		int 16h;
+		jnz got;
+		mov k, 0;
+	}
+	got:
+	return k;
+}
+
+
+
 void mcos_makeargs()
 {
 	int i;
@@ -180,6 +238,57 @@ int mcos_alloc(unsigned size, unsigned *segm)
 		mov r,ax;
 	}
 	return r;
+}
+
+unsigned gethseconds()
+{
+	unsigned ticks;
+	asm {
+		mov ah, 00h;
+		int 1Ah;
+		mov ticks, dx;
+	}
+	ticks%=10000;
+	ticks*=5;
+	return ticks;
+}
+
+
+unsigned mcos_read(int handle, unsigned char far *buffer, unsigned len)
+{
+	unsigned count=0;
+	while(len--)
+	{
+		int ch=mcos_fgetc(handle);
+		if(ch<0)
+			break;
+		*buffer=ch;
+		count++;
+		buffer++;
+	}
+	return count;
+}
+
+void far *farmalloc(unsigned s)
+{
+	unsigned seg;
+	unsigned n = s/16 + (s%16 ? 1 : 0);
+	if(mcos_alloc(n,&seg)) {
+		return MK_FP(seg,0);
+	}
+	return MK_FP(0,0);
+}
+
+void farfree(void far *ptr)
+{
+}
+
+void sound(unsigned freq)
+{
+}
+ 
+void nosound()
+{
 }
 
 

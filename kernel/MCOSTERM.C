@@ -637,8 +637,12 @@ void Term_CursorB()
 
 void interrupt far NewKeyInt(void)
 {
+	unsigned baseptr=_BP;
 	unsigned char a,i,t;
 	unsigned b,w,x;
+	unsigned headptr;
+	unsigned tailptr;
+
 	b=peek(0x0040,0x001C);
 	asm cli;
 	x=peek(0x0040,0x0071);
@@ -682,8 +686,33 @@ void interrupt far NewKeyInt(void)
 			b=peek(0x0040,0x0080);
 		poke(0x0040,0x001C,b);
 	}
+	
+	headptr = *(unsigned far *)0x0040001A;
+	tailptr = *(unsigned far *)0x0040001C;
+	if(headptr != tailptr) {
+		unsigned key = *(unsigned far *) (0x00400000 + headptr);
+		static unsigned state = 0;
+		if(key==0x1E00 && state==0) {
+			state=1;
+		}
+		else if(state==1) {
+			if(key==0x1100) {
+				kprintf("Key %X\r\n", key);
+			}
+			state=0;
+		}
+	}
+
 	asm sti;
 	if(x&0x80) {
+/*	  unsigned stackseg = _SS;
+	  unsigned i;
+	  for(i=0;i<20;i+=2)
+	  {
+		  kprintf("[SS:BP+%u] [%x:%x] => %x\r\n", i,stackseg,baseptr+i, peek(stackseg, baseptr+i));
+	  }
+*/
 	  kill_proc();
 	}
+	
 }

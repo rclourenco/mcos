@@ -1,0 +1,1 @@
+BOOT C:\Users\renato\Documents\mcos.img C:\Users\renato\Documents\floppyb.img
