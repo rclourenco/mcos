@@ -1,4 +1,5 @@
 #include "graphlib.c"
+#include "mcosapi.h"
 #include "midilib.c"
 
 #define abs(X) ((X)<0?-(X):(X))
@@ -154,6 +155,7 @@ char TestGO();
 #endif
 char WaitToStart();
 
+
 typedef struct {
 	char id[11];
 	unsigned char byteorder;
@@ -165,34 +167,6 @@ typedef struct {
 	unsigned size;
 	void far *ptr;
 } TResourceMap;
-
-int loadResourceFile(const char *filename, TResourceMap *rmap, int max);
-TResourceMap *getResource(const char *id, TResourceMap *rmap, int max);
-
-void setpali(char i, char r, char g, char b)
-{
-		asm {
-			mov dx, 0x3c8;
-			mov al, i; out dx, al;
-			mov dx, 0x3c9;
-			mov al, r; out dx, al;
-			mov al, g; out dx, al;
-			mov al, b; out dx, al;
-		}
-}
-
-void setpal(Trgb far *pal)
-{
-	int i;
-	for(i=0;i<256;i++)
-	{
-		setpali(i, pal[i].R/(256/64), pal[i].G/(256/64), pal[i].B/(256/64));
-	}
-}
-
-#define MAXRESOURCES 50
-TResourceMap rmap[MAXRESOURCES];
-Trgb far *palette=0L;
 
 int vcm=1000;
 int GXI=15;
@@ -251,7 +225,194 @@ unsigned mrandom(unsigned mrandom)
 	return x%mrandom;
 }
 
-void main()
+
+#define MAXRESOURCES 50
+TResourceMap rmap[MAXRESOURCES];
+Trgb far *palette=0L;
+
+int loadResourceFile(const char *filename, TResourceMap *rmap, int max);
+TResourceMap *getResource(const char *id, TResourceMap *rmap, int max);
+
+void setpali(char i, char r, char g, char b)
+{
+		asm {
+			mov dx, 0x3c8;
+			mov al, i; out dx, al;
+			mov dx, 0x3c9;
+			mov al, r; out dx, al;
+			mov al, g; out dx, al;
+			mov al, b; out dx, al;
+		}
+}
+
+void setpal(Trgb far *pal)
+{
+	int i;
+	for(i=0;i<256;i++)
+	{
+		setpali(i, pal[i].R/(256/64), pal[i].G/(256/64), pal[i].B/(256/64));
+	}
+}
+
+
+int loadResourceFile(const char *filename, TResourceMap *rmap, int max)
+{
+	int handle;
+	int n=0;
+	unsigned size=0;
+	char buffer[12];
+	TResourceHeader rh;
+	int ok=1;
+	if( (handle=mcos_open(filename,READMODE)) == -1 ) {
+		printf("Cannot open resource file %s\n", filename);
+		return 0;
+	}
+
+	while(ok)
+	{
+		if(!mcos_read(handle,&rh,sizeof(rh)))
+			break;
+		size=rh.size[0]+rh.size[1]*256;
+		strcpy(rmap[n].id, rh.id);
+		rmap[n].size=size;
+		rmap[n].ptr=0L;
+		//printf("Resource id %s, size %u\n", rh.id, size);
+		
+		if(size) {
+			rmap[n].ptr = farmalloc(size);
+			if(!rmap[n].ptr) {
+				ok=0;
+				printf("Out of memory %u\r\n",size);
+				break;
+			}
+			if(!mcos_read(handle,rmap[n].ptr,size))
+				break;
+		}
+		n++;
+		
+		if(rh.id[0]=='R' && rh.id[1]=='E' && rh.id[2]=='$') {
+			break;
+		}
+		
+		if(n>=max)
+			break;
+	}
+	
+	mcos_close(handle);
+	return n;
+}
+
+
+TResourceMap *getResource(const char *id, TResourceMap *rmap, int max)
+{
+	unsigned i;
+	for(i=0;i<max;i++)
+	{
+		if(!strcmp(rmap[i].id, id))
+			return &rmap[i];
+	}
+	return 0;
+}
+
+void DrawNextPic(TPicture far *ptr)
+{
+	unsigned w,h;
+	static curx;
+	static cury;
+	static maxh;
+
+	if(!ptr)
+		return;
+	w=ptr->w;
+	h=ptr->h;
+	if(curx+w>319)
+	{
+		curx=0;
+		cury+=maxh;
+		maxh=0;
+	}
+	if(h>maxh)
+		maxh=h;
+	DrawPic(curx,cury,ptr);
+	curx+=w;
+}
+
+
+void drawpics()
+{
+	TResourceMap *rs;
+	char buffer[12];
+	int i;
+
+	if(!(rs=getResource("Paleta",rmap,MAXRESOURCES))) {
+		printf("Resource not found Paleta\n");
+		LoadError=1;
+		return;
+	}
+	
+	if(rs->size!=256*sizeof(Trgb)) {
+		printf("Wrong palette data size expected %u got %u\n",256*sizeof(Trgb), rs->size);
+		return;
+	}
+
+	palette=rs->ptr;	
+	if(palette)
+		setpal(palette);
+
+	
+	if(!(rs=getResource("BonusPic00",rmap,MAXRESOURCES))) {
+		printf("Resource not found BonusPic00\n");
+		//LoadError=1;
+		return;
+	} else 
+	if(rs->ptr) {
+		DrawNextPic(rs->ptr);
+	}
+	
+	for(i=0;i<12;i++)
+	{
+		strcpy(buffer,"PacPic00");
+		buffer[6]=(i/10)%10+'0';
+		buffer[7]=i%10+'0';
+		if(!(rs=getResource(buffer,rmap,MAXRESOURCES))) {
+			printf("Resource not found %s\n", buffer);
+			LoadError=1;
+			return;
+		}
+		DrawNextPic(rs->ptr);
+	}
+
+	for(i=0;i<6;i++)
+	{
+		strcpy(buffer,"GhostPic00");
+		buffer[8]=(i/10)%10+'0';
+		buffer[9]=i%10+'0';
+
+		if(!(rs=getResource(buffer,rmap,MAXRESOURCES))) {
+			printf("Resource not found %s\n", buffer);
+			LoadError=1;
+			return;
+		}
+		DrawNextPic(rs->ptr);
+	}
+	
+	for(i=0;i<21;i++)
+	{
+		strcpy(buffer,"WallPic00");
+		buffer[7]=(i/10)%10+'0';
+		buffer[8]=i%10+'0';
+
+		if(!(rs=getResource(buffer,rmap,MAXRESOURCES))) {
+			printf("Resource not found %s\n", buffer);
+			LoadError=1;
+			return;
+		}
+		DrawNextPic(rs->ptr);
+	}
+
+}
+
+int main()
 {
 	BYTE op;
 	SM.m=0;
@@ -277,6 +438,7 @@ void main()
 	modo13h();
 	setpal(palette);
 	UserScreen(VirScr);
+
 	do{
 		op=Menu();
 		switch(op)
@@ -287,65 +449,258 @@ void main()
 			case 3:Sobre();break;
 		}
 	}while(op!=4);
+	
 	modo3h();
 	UnloadAll();
+	return 0;
 }
 
-#ifdef USE_RATO
-char RatoM(char dir)
-{
-	int x,y,b;
-	int r=0;
-	if(!SM.m) return 0;
-	GetRato(&x,&y,&b);
-	switch(dir)
-	{
-		case ANY:if((abs(x-SM.x)>5)||(abs(y-SM.y)>5)) r=1;break;
-		case LEFT:if(SM.x-x>5) r=1;break;
-		case RIGHT:if(x-SM.x>5) r=1;break;
-		case UP:if(SM.y-y>5) r=1;break;
-		case DOWN:if(y-SM.y>5) r=1;break;
+void newkeyb2(void);
 
-	}
-	if(r)
-	{
-		SetRato(100,100);
-		GetRato(&SM.x,&SM.y,&SM.b);
-	}
-	return r;
-}
-#endif
-
-char WaitToStart()
+void Play_game()
 {
-	#ifdef USE_RATO
-	if(RatoM(ANY))
-		return 1;
-	#endif
-  if(pl)
-  {
-	switch(Game.plr)
-	{
-		case 0:if(StickA[0]||StickA[1]) return 1;break;
-		case 1:if(StickB[0]||StickB[1]) return 1;break;
-	}
-  }
-  else
-  {
-	if(StickB[0]||StickB[1]||StickA[0]||StickA[1]) return 1;
-  }
-  return 0;
-}
 
-void CpyPFg(BYTE far *dest,BYTE far *orig)
-{
-	int i;
-	int j;
-	for(i=0;i<PFYD;i++)
-		for(j=0;j<PFXD;j++)
+	char done=0;
+	int set;
+	int frcnt=0;
+	int div=1;
+	unsigned hsecs;
+	unsigned oldclk;
+	void far * far *intrtab=0x0;
+
+	setpal(palette);
+	GameInit();
+	
+	asm cli;
+	oldkeyb=intrtab[0x9];
+	intrtab[0x9]=MK_FP(_CS,newkeyb);
+	asm sti;
+	
+	oldclk=gethseconds();
+
+	if(musica==2) Midi_Play(MusSeg);
+	UpDateScreen();
+
+	while(!done)
+	{
+		set=10;
+		if((musica==2)&&(Midi_Status()==0)) Midi_Play(MusSeg);
+		Game.count++;
+
+
+		switch(Game.st)
 		{
-			dest[i*PFXD+j]=orig[i*PFXD+j];
+			case PLAY:
+				Game.count2++;
+				GameControl();
+				Colides();
+				if(Player[Game.plr].PF_dots==0)
+					NextLevel();
+				AvaliaJoyStick();
+				break;
+			case ANI:
+				Kill();
+				break;
+
 		}
+
+		if(kbhit())
+		{
+			switch(getch())
+			{
+				case 27:switch(Game.st)
+							{
+								case PAUSA:set=ControlPopUp(3);break;
+								case WAIT:
+								case PLAY:Game.st=PAUSA;PopUp=0;break;
+								default:set=3;break;
+							}
+							break;
+				case 0:switch(getch())
+						{
+							case 59:if(Game.st!=PAUSA) set=1;break;
+							case 60:set=2;break;
+							case 61:som=!som;break;
+							case 80:if(Game.st==PAUSA)
+											set=ControlPopUp(0);
+									  break;
+							case 72:if(Game.st==PAUSA)
+											set=ControlPopUp(1);
+									  break;
+						}
+						break;
+				case 13:if(Game.st==PAUSA)
+								set=ControlPopUp(2);
+							break;
+
+			}
+
+		}
+		if(!done)
+			switch(set)
+			{
+				case 1:GameInit();break;
+				case 2:if(pl==0)
+							pl=1;
+						 else
+						 {
+							pl=0;
+							if(stl<9)
+								stl++;
+							else
+								stl=0;
+						 }
+						 GameInit();
+						break;
+				case 4:done=1;break;
+				case 5:Game.st=WAIT;break;
+				default:if((WaitToStart())||(set==3))
+							{
+								switch(Game.st)
+								{
+									case WAIT:Game.st=PLAY;break;
+									case GO:GameInit();break;
+								}
+							}
+			}
+		SndC();
+		
+		UpDateScreen();
+		frcnt++;
+
+		hsecs=gethseconds();
+		if(hsecs-oldclk>100)
+		{
+			frames=frcnt;
+				
+			frcnt=0;
+			oldclk=hsecs;
+		}
+	}
+	nosound();
+	if(musica==2) Midi_Stop(MusSeg);
+	asm cli;
+	intrtab[0x9]=oldkeyb;
+	asm sti;
+}
+
+
+void Ajuda()
+{
+	
+	BYTE tecla;
+	int handle,bytes;
+	unsigned p100;
+	unsigned pos;
+	unsigned max;
+	BYTE caracter;
+	handle=mcos_open("pacman.hlp",READMODE);
+	Fundo();
+	if(handle==-1)
+	{
+		writest(100,100,"Erro ao abrir ficheiro de ajuda.");
+		getch();
+	}
+	else
+	{
+		do
+		{
+	//		textcolor(7);
+	//		textbackground(1);
+	//		clrscr();
+	//		textcolor(2);
+	//		textbackground(4);
+	//		gotoxy(1,1);
+	//		clreol();
+			printf(" P a c   M a n");
+//			gotoxy(75,1);
+			printf("Ajuda\r\n");
+			//textcolor(7);
+			//textbackground(1);
+		/*	do
+			{
+				bytes=mcos_fgetc(handle);
+				bytes=_read(handle,&caracter,1);
+				if(bytes)putch(caracter);
+			}while((bytes>0)&&(wherey()!=25));
+			*/
+	//		textcolor(2);
+	//		textbackground(4);
+	//		gotoxy(1,25);
+	//		clreol();
+	/*		max=filelength(handle);
+			pos=tell(handle);
+			asm {
+				push ax;
+				push cx;
+				push dx;
+				mov cx,100;
+				xor dx,dx;
+				mov ax,pos;
+				mul cx;
+				div max;
+				mov p100, ax;
+				pop dx;
+				pop cx;
+				pop ax;
+			}
+			gotoxy(75,25);
+			printf("%u%%",p100);
+			gotoxy(1,25);
+			if(bytes)
+			{
+				printf("-- Mais --");
+				tecla=getch();
+				if(tecla==0) tecla=getch();
+				if(tecla==27) break;
+			}
+			*/
+			bytes=0;
+		}while(bytes>0);
+		mcos_close(handle);
+		if(tecla!=27)
+		while(getch()!=27);
+	}
+}
+
+
+void Sobre()
+{
+	Fundo();
+	TextColor=MkColor(0,0,2);
+	writest(50,70,"VERSAO: ");
+	writest(50,100,"AUTOR: ");
+	writest(50,130,"DATA: ");
+	writest(190,70,"1.0");
+	writest(150,100,"RENATO LOURENCO");
+	writest(160,130,"FEVEREIRO 2002");
+	TextColor=MkColor(4,0,0);
+	writest(51,71,"VERSAO: ");
+	writest(51,101,"AUTOR: ");
+	writest(51,131,"DATA: ");
+	writest(191,71,"1.0");
+	writest(151,101,"RENATO LOURENCO");
+	writest(161,131,"FEVEREIRO 2002");
+	ScrnCpyUD();
+	getch();
+}
+
+
+void Fundo()
+{
+	int c;
+	fillscreen(0);
+	for(c=0;c<300;c++)
+		DrawPixel(xrandom(320),xrandom(180)+20,xrandom(255));
+	Color=MkColor(2,2,2);
+	DrawRect(0,0,319,199,LINE);
+	Color=MkColor(0,0,3);
+	FillColor=MkColor(5,0,0);
+	DrawRect(1,1,318,20,LIFI);
+	TextColor=MkColor(0,0,0);
+	writest(100,7,"P A C   M A N");
+	TextColor=MkColor(0,7,0);
+	writest(101,8,"P A C   M A N");
 }
 
 char Menu()
@@ -397,123 +752,6 @@ char Menu()
 	return op;
 }
 
-void Ajuda()
-{
-	/*
-	BYTE tecla;
-	int handle,bytes;
-	unsigned p100;
-	unsigned pos;
-	unsigned max;
-	BYTE caracter;
-	handle=_open("misc/PacMan.hlp",O_RDONLY|O_BINARY);
-	textmode(3);
-	SetOverScan(5);
-	if(handle==-1)
-	{
-		puts("Erro ao abrir ficheiro de ajuda.");
-		getch();
-	}
-	else
-	{
-		do
-		{
-			textcolor(7);
-			textbackground(1);
-			clrscr();
-			textcolor(2);
-			textbackground(4);
-			gotoxy(1,1);
-			clreol();
-			cprintf(" P a c   M a n");
-			gotoxy(75,1);
-			cprintf("Ajuda\r\n");
-			textcolor(7);
-			textbackground(1);
-			do
-			{
-				bytes=_read(handle,&caracter,1);
-				if(bytes)putch(caracter);
-			}while((bytes>0)&&(wherey()!=25));
-			textcolor(2);
-			textbackground(4);
-			gotoxy(1,25);
-			clreol();
-			max=filelength(handle);
-			pos=tell(handle);
-			asm {
-				push ax;
-				push cx;
-				push dx;
-				mov cx,100;
-				xor dx,dx;
-				mov ax,pos;
-				mul cx;
-				div max;
-				mov p100, ax;
-				pop dx;
-				pop cx;
-				pop ax;
-			}
-			gotoxy(75,25);
-			cprintf("%03u%%",p100);
-			gotoxy(1,25);
-			if(bytes)
-			{
-				cputs("-- Mais --");
-				tecla=getch();
-				if(tecla==0) tecla=getch();
-				if(tecla==27) break;
-			}
-		}while(bytes>0);
-		_close(handle);
-		if(tecla!=27)
-		while(getch()!=27);
-	}
-	modo13h();
-	setpal(palette);
-	*/
-}
-
-
-void Sobre()
-{
-	Fundo();
-	TextColor=MkColor(0,0,2);
-	writest(50,70,"VERSAO: ");
-	writest(50,100,"AUTOR: ");
-	writest(50,130,"DATA: ");
-	writest(190,70,"1.0");
-	writest(150,100,"RENATO LOURENCO");
-	writest(160,130,"FEVEREIRO 2002");
-	TextColor=MkColor(4,0,0);
-	writest(51,71,"VERSAO: ");
-	writest(51,101,"AUTOR: ");
-	writest(51,131,"DATA: ");
-	writest(191,71,"1.0");
-	writest(151,101,"RENATO LOURENCO");
-	writest(161,131,"FEVEREIRO 2002");
-	ScrnCpyUD();
-	getch();
-}
-
-
-void Fundo()
-{
-	int c;
-	fillscreen(0);
-	for(c=0;c<300;c++)
-		DrawPixel(xrandom(320),xrandom(180)+20,xrandom(255));
-	Color=MkColor(2,2,2);
-	DrawRect(0,0,319,199,LINE);
-	Color=MkColor(0,0,3);
-	FillColor=MkColor(5,0,0);
-	DrawRect(1,1,318,20,LIFI);
-	TextColor=MkColor(0,0,0);
-	writest(100,7,"P A C   M A N");
-	TextColor=MkColor(0,7,0);
-	writest(101,8,"P A C   M A N");
-}
 
 void SetupMenu()
 {
@@ -637,6 +875,87 @@ void SetSomOnOff()
 	}
 }
 
+#ifdef USE_RATO
+char RatoM(char dir)
+{
+	int x,y,b;
+	int r=0;
+	if(!SM.m) return 0;
+	GetRato(&x,&y,&b);
+	switch(dir)
+	{
+		case ANY:if((abs(x-SM.x)>5)||(abs(y-SM.y)>5)) r=1;break;
+		case LEFT:if(SM.x-x>5) r=1;break;
+		case RIGHT:if(x-SM.x>5) r=1;break;
+		case UP:if(SM.y-y>5) r=1;break;
+		case DOWN:if(y-SM.y>5) r=1;break;
+
+	}
+	if(r)
+	{
+		SetRato(100,100);
+		GetRato(&SM.x,&SM.y,&SM.b);
+	}
+	return r;
+}
+#endif
+
+char WaitToStart()
+{
+	#ifdef USE_RATO
+	if(RatoM(ANY))
+		return 1;
+	#endif
+  if(pl)
+  {
+	switch(Game.plr)
+	{
+		case 0:if(StickA[0]||StickA[1]) return 1;break;
+		case 1:if(StickB[0]||StickB[1]) return 1;break;
+	}
+  }
+  else
+  {
+	if(StickB[0]||StickB[1]||StickA[0]||StickA[1]) return 1;
+  }
+  return 0;
+}
+
+void CpyPFg(BYTE far *dest,BYTE far *orig)
+{
+	int i;
+	int j;
+	for(i=0;i<PFYD;i++)
+		for(j=0;j<PFXD;j++)
+		{
+			dest[i*PFXD+j]=orig[i*PFXD+j];
+		}
+}
+
+
+
+
+int mainx()
+{
+	modo13h();
+	fillscreen(0);
+    printf("Hello World!\r\n");
+	FillColor=40;
+	Color=14;
+	TextColor=14;
+	DrawRect(10,10,40,40,LIFI);
+	writest(100,50,"Hello World!");
+	mcos_getkey();
+	modo3h();
+	loadResourceFile("pacman.res",rmap,MAXRESOURCES);
+	printf("Press a key\r\n");
+	mcos_getkey();
+	modo13h();
+	drawpics();
+	mcos_getkey();
+	modo3h();
+    return 0;
+}
 
 void Show_Ghost(int g)
 {
@@ -994,123 +1313,6 @@ void BonusColide()
 	}
 }
 
-void Play_game()
-{
-
-	char done=0;
-	int set;
-	int frcnt=0;
-
-	unsigned hsecs;
-	unsigned oldclk;
-	setpal(palette);
-	GameInit();
-	oldkeyb=GetIntVect(0x9);
-	SetIntVect(0x9,newkeyb);
-	if(musica==2) Midi_Play(MusSeg);
-	UpDateScreen();
-
-	oldclk=gethseconds();
-
-	while(!done)
-	{
-		set=10;
-		if((musica==2)&&(Midi_Status()==0)) Midi_Play(MusSeg);
-		Game.count++;
-
-
-		switch(Game.st)
-		{
-			case PLAY:
-				Game.count2++;
-				GameControl();
-				Colides();
-				if(Player[Game.plr].PF_dots==0)
-					NextLevel();
-				AvaliaJoyStick();
-				break;
-			case ANI:
-				Kill();
-				break;
-
-		}
-
-		if(kbhit())
-		{
-			switch(getch())
-			{
-				case 27:switch(Game.st)
-							{
-								case PAUSA:set=ControlPopUp(3);break;
-								case WAIT:
-								case PLAY:Game.st=PAUSA;PopUp=0;break;
-								default:set=3;break;
-							}
-							break;
-				case 0:switch(getch())
-						{
-							case 59:if(Game.st!=PAUSA) set=1;break;
-							case 60:set=2;break;
-							case 61:som=!som;break;
-							case 80:if(Game.st==PAUSA)
-											set=ControlPopUp(0);
-									  break;
-							case 72:if(Game.st==PAUSA)
-											set=ControlPopUp(1);
-									  break;
-						}
-						break;
-				case 13:if(Game.st==PAUSA)
-								set=ControlPopUp(2);
-							break;
-
-			}
-
-		}
-		if(!done)
-			switch(set)
-			{
-				case 1:GameInit();break;
-				case 2:if(pl==0)
-							pl=1;
-						 else
-						 {
-							pl=0;
-							if(stl<9)
-								stl++;
-							else
-								stl=0;
-						 }
-						 GameInit();
-						break;
-				case 4:done=1;break;
-				case 5:Game.st=WAIT;break;
-				default:if((WaitToStart())||(set==3))
-							{
-								switch(Game.st)
-								{
-									case WAIT:Game.st=PLAY;break;
-									case GO:GameInit();break;
-								}
-							}
-			}
-		SndC();
-		if(Game.count%10==0)
-			UpDateScreen();
-		frcnt++;
-
-		hsecs=gethseconds();
-		if(hsecs-oldclk>100)
-		{
-			frames=frcnt;
-			frcnt=0;
-			oldclk=hsecs;
-		}
-	}
-	nosound();
-	if(musica==2) Midi_Stop(MusSeg);
-	SetIntVect(0x9,oldkeyb);
-}
 
 void ShowPopUp()
 {
@@ -1444,7 +1646,6 @@ void writenumber(char *buffer, unsigned d, unsigned r)
   if(rm>5)
 	  rm=5;
   strcpy(buffer,&t[rm]);
-  mcos_print(buffer);
 }
 
 
@@ -1522,6 +1723,57 @@ void UpDateScreen()
 		ScrnCpyUD();
 }
 
+void Show_PF()
+{
+	int x,y;
+	int p;
+	BYTE far *PFg=Player[Game.plr].PFg;
+	for(y=0;y<PFYD;y++)
+	for(x=0;x<PFXD;x++)
+	{
+		switch(PFg[y*PFXD+x])
+		{
+			case 'h':p=0;break;
+			case 'v':p=5;break;
+			case 'a':p=1;break;
+			case 'b':p=2;break;
+			case 'c':p=3;break;
+			case 'd':p=4;break;
+			case 'e':p=9;break;
+			case 'f':p=8;break;
+			case 'g':p=6;break;
+			case 'i':p=7;break;
+			case 'j':p=15;break;
+			case 'k':p=14;break;
+			case 'l':p=12;break;
+			case 'm':p=13;break;
+			case 'n':p=16;break;
+			case 'p':p=10;break;
+			case 'q':p=17;break;
+			case 'r':p=11;break;
+			case 'x':p=19;break;
+			case 'y':p=20;break;
+			default:p=18;
+		}
+		DrawPicF(x*10+PFXI,y*10+PFYI,PFp[p]);
+	}
+
+}
+
+void Vsync()
+{
+	asm               mov dx,0x3DA
+		 uno:
+	asm               in  al,dx
+	asm               and al,0x8
+	asm               jnz uno
+		 dos:
+	asm               in  al,dx
+	asm               and al,0x8
+	asm               jz  dos
+
+}
+
 
 unsigned char inportb(unsigned p)
 {
@@ -1579,59 +1831,9 @@ void interrupt newkeyb(void)
   oldkeyb();
 }
 
-void Show_PF()
-{
-	int x,y;
-	int p;
-	BYTE far *PFg=Player[Game.plr].PFg;
-	for(y=0;y<PFYD;y++)
-	for(x=0;x<PFXD;x++)
-	{
-		switch(PFg[y*PFXD+x])
-		{
-			case 'h':p=0;break;
-			case 'v':p=5;break;
-			case 'a':p=1;break;
-			case 'b':p=2;break;
-			case 'c':p=3;break;
-			case 'd':p=4;break;
-			case 'e':p=9;break;
-			case 'f':p=8;break;
-			case 'g':p=6;break;
-			case 'i':p=7;break;
-			case 'j':p=15;break;
-			case 'k':p=14;break;
-			case 'l':p=12;break;
-			case 'm':p=13;break;
-			case 'n':p=16;break;
-			case 'p':p=10;break;
-			case 'q':p=17;break;
-			case 'r':p=11;break;
-			case 'x':p=19;break;
-			case 'y':p=20;break;
-			default:p=18;
-		}
-		DrawPicF(x*10+PFXI,y*10+PFYI,PFp[p]);
-	}
 
-}
-
-void Vsync()
-{
-	asm               mov dx,0x3DA
-		 uno:
-	asm               in  al,dx
-	asm               and al,0x8
-	asm               jnz uno
-		 dos:
-	asm               in  al,dx
-	asm               and al,0x8
-	asm               jz  dos
-
-}
 
 void LoadAllNew();
-void LoadAllOld();
 
 void LoadAll()
 {
@@ -1665,7 +1867,7 @@ void LoadAllNew()
 	int count;
 	int i=0;
 	char buffer[11];
-	count=loadResourceFile("Pacman.res",rmap,MAXRESOURCES);
+	count=loadResourceFile("pacman.res",rmap,MAXRESOURCES);
 	if(!count) {
 		LoadError=1;
 		return;
@@ -1713,8 +1915,8 @@ void LoadAllNew()
 	for(i=0;i<12;i++)
 	{
 		strcpy(buffer,"PacPic00");
-		buffer[6]=(i/10)%10;
-		buffer[7]=i%10;
+		buffer[6]=(i/10)%10 + '0';
+		buffer[7]=i%10 + '0';
 		if(!(rs=getResource(buffer,rmap,MAXRESOURCES))) {
 			printf("Resource not found %s\n", buffer);
 			LoadError=1;
@@ -1726,8 +1928,8 @@ void LoadAllNew()
 	for(i=0;i<6;i++)
 	{
 		strcpy(buffer,"GhostPic00");
-		buffer[8]=(i/10)%10;
-		buffer[9]=i%10;
+		buffer[8]=(i/10)%10 + '0';
+		buffer[9]=i%10 + '0';
 		if(!(rs=getResource(buffer,rmap,MAXRESOURCES))) {
 			printf("Resource not found %s\n", buffer);
 			LoadError=1;
@@ -1739,8 +1941,8 @@ void LoadAllNew()
 	for(i=0;i<21;i++)
 	{
 		strcpy(buffer,"WallPic00");
-		buffer[7]=(i/10)%10;
-		buffer[8]=i%10;
+		buffer[7]=(i/10)%10 + '0';
+		buffer[8]=i%10 + '0';
 
 		if(!(rs=getResource(buffer,rmap,MAXRESOURCES))) {
 			printf("Resource not found %s\n", buffer);
@@ -1778,7 +1980,6 @@ void LoadAllNew()
 			}
 		}
 	}
-	getch();
 }
 
 void UnloadAll()
@@ -1798,63 +1999,3 @@ void UnloadAll()
 	//return NULL;
 
 }
-
-TResourceMap *getResource(const char *id, TResourceMap *rmap, int max)
-{
-	unsigned i;
-	for(i=0;i<max;i++)
-	{
-		if(!strcmp(rmap[i].id, id))
-			return &rmap[i];
-	}
-	return 0;
-}
-
-
-int loadResourceFile(const char *filename, TResourceMap *rmap, int max)
-{
-	int handle;
-	int n=0;
-	unsigned size=0;
-	char buffer[12];
-	TResourceHeader rh;
-	int ok=1;
-	if( (handle=mcos_open(filename,READMODE)) == -1 ) {
-		printf("Cannot open resource file %s\n", filename);
-		return 0;
-	}
-
-	while(ok)
-	{
-		if(!mcos_read(handle,&rh,sizeof(rh)))
-			break;
-		size=rh.size[0]+rh.size[1]*256;
-		strcpy(rmap[n].id, rh.id);
-		rmap[n].size=size;
-		rmap[n].ptr=0L;
-		//printf("Resource id %s, size %u\n", rh.id, size);
-		
-		if(size) {
-			rmap[n].ptr = farmalloc(size);
-			if(!rmap[n].ptr) {
-				ok=0;
-				printf("Out of memory %u\r\n",size);
-				break;
-			}
-			if(!mcos_read(handle,rmap[n].ptr,size))
-				break;
-		}
-		n++;
-		
-		if(rh.id[0]=='R' && rh.id[1]=='E' && rh.id[2]=='$') {
-			break;
-		}
-		
-		if(n>=max)
-			break;
-	}
-	
-	mcos_close(handle);
-	return n;
-}
-

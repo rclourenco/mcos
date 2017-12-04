@@ -31,6 +31,8 @@ unsigned mcos_getkey();
 unsigned gethseconds();
 int getch();
 int kbhit();
+void nosound();
+void sound(unsigned freq);
 
 void printf(char *str,...);
 void far *farmalloc(unsigned s);

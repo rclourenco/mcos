@@ -285,10 +285,46 @@ void farfree(void far *ptr)
 
 void sound(unsigned freq)
 {
+	if(freq<19)
+	{
+		nosound();
+		return;
+	}
+	asm {
+		mov cx, freq;
+		mov dx, 0x12;
+		mov ax, 0x34DC;
+		div cx;
+		xchg ax, cx;
+
+		mov dx, 0x43;
+		mov al, 0xB6;
+		out dx, al;
+		
+		mov dx, 0x42;
+		mov al, cl;
+		out dx, al;
+		
+		mov al, ch;
+		out dx, al;
+		
+		mov dx, 0x61;
+		in al, dx;
+		
+		or al, 0x3
+		out dx, al;
+	}
+		
 }
  
 void nosound()
 {
+	asm {
+		mov dx, 0x61;
+		in al, dx;
+		and al, 0xFC;
+		out dx, al;
+	}
 }
 
 
