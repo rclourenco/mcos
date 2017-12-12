@@ -27,6 +27,7 @@ unsigned mcos_read(int handle, unsigned char far *buffer, unsigned len);
 void mcos_putchar(char c);
 char mcos_getchar();
 unsigned mcos_getkey();
+unsigned long mcos_fsize(int handle);
 
 unsigned gethseconds();
 int getch();
@@ -40,5 +41,6 @@ void far *farmalloc(unsigned s);
 void far *GetIntVect(unsigned char i);
 void SetIntVect(unsigned char i,void far *p);
 
+void _fstrncpy(char far *dest,char far *org, unsigned b);
 
 #endif

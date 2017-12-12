@@ -1,10 +1,6 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <alloc.h>
-#include <dos.h>
-#include <sys/stat.h>
-#include <fcntl.h>
+#include "mcosapi.h"
+
+#define NULL 0
 
 unsigned long mlongmul(unsigned long a, unsigned long b);
 unsigned long mlongdiv(unsigned long N, unsigned long D, unsigned long *r);
@@ -252,7 +248,6 @@ int midi_playtracks(MidiPlayer *mp, unsigned long ticks)
 	unsigned playing=0;
 	for(i=0;i<mp->ntracks;i++)
 	{
-//		printf("Track %u ", i);
 		playing |= midi_playtrack(mp,i, ticks);
 	}
 	return playing;
@@ -264,7 +259,6 @@ void midi_set_tempo(MidiPlayer *mp, unsigned long tempo)
 	mp->tempo=tempo;
 	
 	mp->d = mlongdiv(mp->tempo,mp->ticks_quarter,NULL);
-	printf("T> %lu %u %lu\n", tempo, mp->ticks_quarter, mp->d);
 }
 
 int midi_track_parse_next(MidiTrackPlayer *mtp, MidiPlayer *mp)
@@ -334,12 +328,6 @@ void midi_add_track(MidiPlayer *mp, MidiTrackPlayer *mtp, unsigned *tt, void far
     mtp[*tt].mlen      = 0L;
     mtp[*tt].rlen      = 0L;
     midi_track_parse_next(&mtp[*tt], mp);
-    printf("=> Nxt %lu s: %lu p: %lu Cmd %0X\n", 
-      mtp[*tt].nexttime,
-      mtp[*tt].mlen,
-      mtp[*tt].pos, 
-      mtp[*tt].start[ mtp[*tt].pos ]
-    );
     (*tt)++;
   }
 }
@@ -357,14 +345,18 @@ void midi_start_iterator(MidiFileIterator *mit, void far *data, unsigned long si
 
 int midi_next_iterator(MidiFileIterator *mit)
 {
-  if(mit->cur_pos<mit->total_len)
+  if(mit->cur_pos+sizeof(MidiFilePrefix)<mit->total_len)
   {
     unsigned long offset;
     MidiFilePrefix far *mfp = (MidiFilePrefix far *)mit->nextptr;
+
+//    printf("Cur: %x:%x\r\n", FP_SEG(mfp), FP_OFF(mfp));
+
     mit->cur_track_len = (mfp->length[0]<<24) + (mfp->length[1]<<16) + (mfp->length[2]<<8) + mfp->length[3];
     _fstrncpy(mit->cur_track_type,mfp->type,4);
     mit->cur_track_type[4]='\0';
     offset = sizeof(MidiFilePrefix)+mit->cur_track_len;
+//    printf("Offset %X\r\n", offset);
     mit->cur_pos+=offset;
     mit->cur_track_ptr=&((char far *)mfp)[sizeof(MidiFilePrefix)];
     mit->nextptr=&((char far *)mfp)[offset];
@@ -389,12 +381,10 @@ void parse_header(void far *data,MidiHeader *header)
 
   header->format = (mfh->format[0] * 256) + mfh->format[1];
   header->tracks = (mfh->tracks[0] * 256) + mfh->tracks[1];
-  printf("Division: %02X %02X\n", mfh->division[0], mfh->division[1]);
   if( mfh->division[0] & 0x80 ) {
     char x;
     header->ticks_frame = mfh->division[1];
     x = (mfh->division[0] | 0x80);
-    printf("frames_second neg %d\n", x);
     header->frames_second = -x;
     header->ticks_quarter = 0;
   }
@@ -411,28 +401,29 @@ void far *load_midi(const char *file, unsigned long *sz)
   void far *data;
   unsigned long size = 0L;
   int handle;
-  struct stat statbuf;
-  stat((char *)file,&statbuf);
-  size=statbuf.st_size;
-  if(_dos_open(file,O_RDONLY, &handle)!=0) {
-    fprintf(stderr, "Cannot open: %s\n", file);
+  unsigned char *p=(unsigned char *)&size;
+
+	if( ( handle=mcos_open((char *)file,READMODE) )==-1) {
+	  printf("Cannot open: %s\n", file);
     return NULL;
   }
-
+  size=mcos_fsize(handle);
   data=farmalloc(size);
   if(data) {
-    unsigned x;
-    if(_dos_read(handle,data,size,&x)!=0) {
+    unsigned rcount=mcos_read(handle,data,size);
+    if(rcount != size) {
       farfree(data);
       data=NULL;
-      fprintf(stderr, "Cannot load midi file\n");
+      printf( "Cannot load midi file %X %X, %X %X %X %X\n",
+               (unsigned)size,
+              rcount, p[0], p[1], p[2], p[3]);
     }
     
   } else {
-    fprintf(stderr, "Cannot alloc mem (%ld)\n", size);
+    printf("Cannot alloc mem (%u)\n", (unsigned)size);
   }
 
-  _dos_close(handle);
+  mcos_close(handle);
 
   *sz= (data ? size : 0);
 
@@ -467,14 +458,18 @@ int main(int argc, char **argv)
 		  player_status=1;
 		  asm popf;
 		  printf("Playing....\n");
-		  while(playing && !kbhit() ) {
+		  while(playing) {
 			  xdelay();
 			  asm pushf;
 			  asm cli;
 			  playing=player_status;
 			  asm popf;
+			  if(kbhit()) {
+			    if(getch()==27)
+			      break;
+			  }
 		  }
-		  printf("Done.");
+		  printf("Done.\n");
     }
     printf("Total Tracks %d\n", total_tracks);
     farfree(data);
@@ -504,6 +499,7 @@ unsigned midi_get_player_status()
 
 void midi_prepare(void far *data, unsigned long size)
 {
+  char far *x=(char far *)data;
     MidiHeader mh;
     MidiFileIterator it;
 	unsigned ok=1;
@@ -516,19 +512,20 @@ void midi_prepare(void far *data, unsigned long size)
 	mp.stick=0;
 	mp.d=900;
 
-    //printf("Loaded %ld bytes on %p\n", size, data);
+    printf("Loaded %u bytes on %x:%x\n", (unsigned)size, FP_SEG(data), FP_OFF(data));
     midi_start_iterator(&it,data,size);
     while( midi_next_iterator(&it) ) {
       if(!strcmp(it.cur_track_type,"MThd")) {
         parse_header(it.cur_track_ptr,&mh);
-		mp.ticks_quarter=mh.ticks_quarter;
+        mp.ticks_quarter=mh.ticks_quarter;
         display_header(&mh);
       }
       else if(!strcmp(it.cur_track_type,"MTrk")) {
         midi_add_track(&mp,tracks, &total_tracks, it.cur_track_ptr, it.cur_track_len);
       }
       else {
-		ok=0;
+        printf("NOK %s %u %u\r\n", it.cur_track_type, (unsigned)it.cur_pos, (unsigned)it.total_len);
+        ok=0;
         break;
       }
     }

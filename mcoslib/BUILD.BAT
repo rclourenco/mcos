@@ -18,7 +18,7 @@ pause
 tcc -mt -c mcosapi.c
 if errorlevel 1 goto endf
 pause
-tlink mcosc0 mcosintr mcosapi %1 /s/c/m,prg%1
+tlink mcosc0 mcosapi %1 /s/c/m,prg%1
 if errorlevel 1 goto endf
 pause
 exe2bin prg%1

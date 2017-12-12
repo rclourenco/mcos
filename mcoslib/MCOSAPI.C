@@ -166,6 +166,20 @@ int mcos_eof(int handle)
 	return eof;
 }
 
+unsigned long mcos_fsize(int handle)
+{
+	unsigned l,h;
+	asm {
+		mov ah,36;
+		mov bx,handle;
+		int 80h;
+		mov h,cx;
+		mov l,dx;
+	}
+	return (h<<16)+l;
+}
+
+
 int mcos_fputc(int handle, char c)
 {
 	int eof;
@@ -450,6 +464,18 @@ void strcpy(char *dest,char *or)
 
 
 void strncpy(char *dest,char *org, unsigned b)
+{
+	unsigned x;
+	x=0;
+	while(org[x] && x<b)
+	{
+		dest[x]=org[x];
+		x++;
+	};
+}
+
+
+void _fstrncpy(char far *dest,char far *org, unsigned b)
 {
 	unsigned x;
 	x=0;
