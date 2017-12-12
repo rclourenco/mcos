@@ -1,24 +1,24 @@
 
  Start  Stop   Length Name               Class
 
- 00000H 0148CH 0148DH _TEXT              CODE
- 01490H 01680H 001F1H _DATA              DATA
- 01682H 01B64H 004E3H _BSS               BSS
- 01B65H 01B65H 00000H _BSSEND            STACK
+ 00000H 014ACH 014ADH _TEXT              CODE
+ 014B0H 0168DH 001DEH _DATA              DATA
+ 0168EH 01B70H 004E3H _BSS               BSS
+ 01B71H 01B71H 00000H _BSSEND            STACK
 
 
 Detailed map of segments
 
  0000:0000 0221 C=CODE   S=_TEXT          G=DGROUP  M=mcosc0.ASM ACBP=28
  0000:0221 062A C=CODE   S=_TEXT          G=DGROUP  M=mcosapi.c  ACBP=28
- 0000:084B 0C42 C=CODE   S=_TEXT          G=DGROUP  M=music.c    ACBP=28
- 0000:1490 0056 C=DATA   S=_DATA          G=DGROUP  M=mcosc0.ASM ACBP=68
- 0000:14E6 001E C=DATA   S=_DATA          G=DGROUP  M=mcosapi.c  ACBP=48
- 0000:1504 017D C=DATA   S=_DATA          G=DGROUP  M=music.c    ACBP=48
- 0000:1682 0000 C=BSS    S=_BSS           G=DGROUP  M=mcosc0.ASM ACBP=48
- 0000:1682 0100 C=BSS    S=_BSS           G=DGROUP  M=mcosapi.c  ACBP=48
- 0000:1782 03E3 C=BSS    S=_BSS           G=DGROUP  M=music.c    ACBP=48
- 0000:1B65 0000 C=STACK  S=_BSSEND        G=DGROUP  M=mcosc0.ASM ACBP=28
+ 0000:084B 0C62 C=CODE   S=_TEXT          G=DGROUP  M=music.c    ACBP=28
+ 0000:14B0 0056 C=DATA   S=_DATA          G=DGROUP  M=mcosc0.ASM ACBP=68
+ 0000:1506 001E C=DATA   S=_DATA          G=DGROUP  M=mcosapi.c  ACBP=48
+ 0000:1524 016A C=DATA   S=_DATA          G=DGROUP  M=music.c    ACBP=48
+ 0000:168E 0000 C=BSS    S=_BSS           G=DGROUP  M=mcosc0.ASM ACBP=48
+ 0000:168E 0100 C=BSS    S=_BSS           G=DGROUP  M=mcosapi.c  ACBP=48
+ 0000:178E 03E3 C=BSS    S=_BSS           G=DGROUP  M=music.c    ACBP=48
+ 0000:1B71 0000 C=STACK  S=_BSSEND        G=DGROUP  M=mcosc0.ASM ACBP=28
 
   Address         Publics by Name
 
@@ -37,30 +37,31 @@ Detailed map of segments
  0000:0188 idle  N_LUMOD@
  0000:015A idle  N_LXMUL@
  0000:013E idle  N_SCOPY@
- 0000:14E8 idle  _args
- 0000:1702 idle  _argtab
+ 0000:096A idle  _allNotesOff
+ 0000:1508 idle  _args
+ 0000:170E idle  _argtab
  0000:08CB idle  _closetimer
- 0000:1504 idle  _counter
- 0000:14EA idle  _curdrv
- 0000:0EEA idle  _display_header
- 0000:14CC idle  _environ
- 0000:14D8 idle  _errno
+ 0000:1524 idle  _counter
+ 0000:150A idle  _curdrv
+ 0000:0F26 idle  _display_header
+ 0000:14EC idle  _environ
+ 0000:14F8 idle  _errno
  0000:0290       _exit
  0000:0552       _farfree
  0000:0510       _farmalloc
  0000:0299       _getch
  0000:04A3 idle  _gethseconds
  0000:0221 idle  _GetIntVect
- 0000:096A idle  _get_micros
- 0000:09A3 idle  _get_ticks
- 0000:14F0 idle  _hextab
+ 0000:09A6 idle  _get_micros
+ 0000:09DF idle  _get_ticks
+ 0000:1510 idle  _hextab
  0000:084B idle  _irq0handler
- 0000:150A idle  _isr
+ 0000:152A idle  _isr
  0000:02D0       _kbhit
- 0000:14EC idle  _key_last
- 0000:14EE idle  _key_pending
- 0000:0FE2 idle  _load_midi
- 0000:10DA       _main
+ 0000:150C idle  _key_last
+ 0000:150E idle  _key_pending
+ 0000:101E idle  _load_midi
+ 0000:10F7       _main
  0000:0483 idle  _mcos_alloc
  0000:038D idle  _mcos_clearerr
  0000:03CC       _mcos_close
@@ -76,29 +77,29 @@ Detailed map of segments
  0000:037D idle  _mcos_print
  0000:044B idle  _mcos_putchar
  0000:04D1       _mcos_read
- 0000:0D31 idle  _midi_add_track
- 0000:11CE idle  _midi_get_player_status
- 0000:0E19 idle  _midi_next_iterator
- 0000:09FC idle  _midi_playtrack
- 0000:0A66 idle  _midi_playtracks
- 0000:11E6 idle  _midi_prepare
- 0000:1318 idle  _midi_processor
- 0000:11C0 idle  _midi_set_player_status
- 0000:0A9C idle  _midi_set_tempo
- 0000:0DD6 idle  _midi_start_iterator
- 0000:0ACB idle  _midi_track_parse_next
- 0000:13B3 idle  _mlongdiv
- 0000:1351 idle  _mlongmul
- 0000:1782 idle  _mp
+ 0000:0D6D idle  _midi_add_track
+ 0000:11EE idle  _midi_get_player_status
+ 0000:0E55 idle  _midi_next_iterator
+ 0000:0A38 idle  _midi_playtrack
+ 0000:0AA2 idle  _midi_playtracks
+ 0000:1206 idle  _midi_prepare
+ 0000:1338 idle  _midi_processor
+ 0000:11E0 idle  _midi_set_player_status
+ 0000:0AD8 idle  _midi_set_tempo
+ 0000:0E12 idle  _midi_start_iterator
+ 0000:0B07 idle  _midi_track_parse_next
+ 0000:13D3 idle  _mlongdiv
+ 0000:1371 idle  _mlongmul
+ 0000:178E idle  _mp
  0000:08E6 idle  _mpu_send
  0000:0904 idle  _mpu_uart
  0000:0589 idle  _nosound
- 0000:1B61 idle  _oldirq0handler
- 0000:0F37 idle  _parse_header
- 0000:1508 idle  _player_status
- 0000:14E6 idle  _prgname
+ 0000:1B6D idle  _oldirq0handler
+ 0000:0F73 idle  _parse_header
+ 0000:1528 idle  _player_status
+ 0000:1506 idle  _prgname
  0000:0690       _printf
- 0000:1682 idle  _sargs
+ 0000:168E idle  _sargs
  0000:0943 idle  _send_midi
  0000:025F idle  _SetIntVect
  0000:089A idle  _setuptimer
@@ -108,27 +109,27 @@ Detailed map of segments
  0000:074E idle  _strlen
  0000:07AF idle  _strncmp
  0000:07FF idle  _strncpy
- 0000:179F idle  _total_tracks
- 0000:17A1 idle  _tracks
+ 0000:17AB idle  _total_tracks
+ 0000:17AD idle  _tracks
  0000:0595 idle  _writehex
  0000:060E idle  _writenum
  0000:0939 idle  _xdelay
- 0000:14DA idle  __8087
- 0000:14C8       __argc
- 0000:14CA       __argv
- 0000:14CE idle  __envLng
- 0000:14D0 idle  __envseg
- 0000:14D2 idle  __envSize
+ 0000:14FA idle  __8087
+ 0000:14E8       __argc
+ 0000:14EA       __argv
+ 0000:14EE idle  __envLng
+ 0000:14F0 idle  __envseg
+ 0000:14F2 idle  __envSize
  0000:0135 idle  __exit
  0000:0825       __fstrncpy
- 0000:14D6 idle  __osmajor
- 0000:14D7 idle  __osminor
- 0000:14D4 idle  __psp
- 0000:14DC idle  __StartTime
- 0000:14D6 idle  __version
- 0000:14E2 idle  ___brklvl
- 0000:14E0 idle  ___heapbase
- 0000:14E4 idle  ___heaptop
+ 0000:14F6 idle  __osmajor
+ 0000:14F7 idle  __osminor
+ 0000:14F4 idle  __psp
+ 0000:14FC idle  __StartTime
+ 0000:14F6 idle  __version
+ 0000:1502 idle  ___brklvl
+ 0000:1500 idle  ___heapbase
+ 0000:1504 idle  ___heaptop
 
   Address         Publics by Value
 
@@ -189,56 +190,57 @@ Detailed map of segments
  0000:0904 idle  _mpu_uart
  0000:0939 idle  _xdelay
  0000:0943 idle  _send_midi
- 0000:096A idle  _get_micros
- 0000:09A3 idle  _get_ticks
- 0000:09FC idle  _midi_playtrack
- 0000:0A66 idle  _midi_playtracks
- 0000:0A9C idle  _midi_set_tempo
- 0000:0ACB idle  _midi_track_parse_next
- 0000:0D31 idle  _midi_add_track
- 0000:0DD6 idle  _midi_start_iterator
- 0000:0E19 idle  _midi_next_iterator
- 0000:0EEA idle  _display_header
- 0000:0F37 idle  _parse_header
- 0000:0FE2 idle  _load_midi
- 0000:10DA       _main
- 0000:11C0 idle  _midi_set_player_status
- 0000:11CE idle  _midi_get_player_status
- 0000:11E6 idle  _midi_prepare
- 0000:1318 idle  _midi_processor
- 0000:1351 idle  _mlongmul
- 0000:13B3 idle  _mlongdiv
- 0000:14C8       __argc
- 0000:14CA       __argv
- 0000:14CC idle  _environ
- 0000:14CE idle  __envLng
- 0000:14D0 idle  __envseg
- 0000:14D2 idle  __envSize
- 0000:14D4 idle  __psp
- 0000:14D6 idle  __osmajor
- 0000:14D6 idle  __version
- 0000:14D7 idle  __osminor
- 0000:14D8 idle  _errno
- 0000:14DA idle  __8087
- 0000:14DC idle  __StartTime
- 0000:14E0 idle  ___heapbase
- 0000:14E2 idle  ___brklvl
- 0000:14E4 idle  ___heaptop
- 0000:14E6 idle  _prgname
- 0000:14E8 idle  _args
- 0000:14EA idle  _curdrv
- 0000:14EC idle  _key_last
- 0000:14EE idle  _key_pending
- 0000:14F0 idle  _hextab
- 0000:1504 idle  _counter
- 0000:1508 idle  _player_status
- 0000:150A idle  _isr
- 0000:1682 idle  _sargs
- 0000:1702 idle  _argtab
- 0000:1782 idle  _mp
- 0000:179F idle  _total_tracks
- 0000:17A1 idle  _tracks
- 0000:1B61 idle  _oldirq0handler
+ 0000:096A idle  _allNotesOff
+ 0000:09A6 idle  _get_micros
+ 0000:09DF idle  _get_ticks
+ 0000:0A38 idle  _midi_playtrack
+ 0000:0AA2 idle  _midi_playtracks
+ 0000:0AD8 idle  _midi_set_tempo
+ 0000:0B07 idle  _midi_track_parse_next
+ 0000:0D6D idle  _midi_add_track
+ 0000:0E12 idle  _midi_start_iterator
+ 0000:0E55 idle  _midi_next_iterator
+ 0000:0F26 idle  _display_header
+ 0000:0F73 idle  _parse_header
+ 0000:101E idle  _load_midi
+ 0000:10F7       _main
+ 0000:11E0 idle  _midi_set_player_status
+ 0000:11EE idle  _midi_get_player_status
+ 0000:1206 idle  _midi_prepare
+ 0000:1338 idle  _midi_processor
+ 0000:1371 idle  _mlongmul
+ 0000:13D3 idle  _mlongdiv
+ 0000:14E8       __argc
+ 0000:14EA       __argv
+ 0000:14EC idle  _environ
+ 0000:14EE idle  __envLng
+ 0000:14F0 idle  __envseg
+ 0000:14F2 idle  __envSize
+ 0000:14F4 idle  __psp
+ 0000:14F6 idle  __osmajor
+ 0000:14F6 idle  __version
+ 0000:14F7 idle  __osminor
+ 0000:14F8 idle  _errno
+ 0000:14FA idle  __8087
+ 0000:14FC idle  __StartTime
+ 0000:1500 idle  ___heapbase
+ 0000:1502 idle  ___brklvl
+ 0000:1504 idle  ___heaptop
+ 0000:1506 idle  _prgname
+ 0000:1508 idle  _args
+ 0000:150A idle  _curdrv
+ 0000:150C idle  _key_last
+ 0000:150E idle  _key_pending
+ 0000:1510 idle  _hextab
+ 0000:1524 idle  _counter
+ 0000:1528 idle  _player_status
+ 0000:152A idle  _isr
+ 0000:168E idle  _sargs
+ 0000:170E idle  _argtab
+ 0000:178E idle  _mp
+ 0000:17AB idle  _total_tracks
+ 0000:17AD idle  _tracks
+ 0000:1B6D idle  _oldirq0handler
 
 Program entry point at 0000:0100
 Warning: No stack

@@ -200,6 +200,19 @@ void send_midi(unsigned char far *p, unsigned long b)
 	}
 }
 
+void allNotesOff()
+{
+  char msg[3];
+  int i;
+  for(i=0;i<16;i++)
+  {
+    msg[0]=0xB0|i;
+    msg[1]=123;
+    msg[2]=0;
+    send_midi(msg,3);
+  }
+}
+
 unsigned long get_micros()
 {
 	unsigned ticks;
@@ -208,7 +221,7 @@ unsigned long get_micros()
 	asm cli;
 	usecs=counter;
 	asm popf;
-	return mlongmul(usecs,800);
+	return mlongmul(usecs,858);
 }
 
 unsigned long get_ticks(MidiPlayer *mp)
@@ -350,13 +363,10 @@ int midi_next_iterator(MidiFileIterator *mit)
     unsigned long offset;
     MidiFilePrefix far *mfp = (MidiFilePrefix far *)mit->nextptr;
 
-//    printf("Cur: %x:%x\r\n", FP_SEG(mfp), FP_OFF(mfp));
-
     mit->cur_track_len = (mfp->length[0]<<24) + (mfp->length[1]<<16) + (mfp->length[2]<<8) + mfp->length[3];
     _fstrncpy(mit->cur_track_type,mfp->type,4);
     mit->cur_track_type[4]='\0';
     offset = sizeof(MidiFilePrefix)+mit->cur_track_len;
-//    printf("Offset %X\r\n", offset);
     mit->cur_pos+=offset;
     mit->cur_track_ptr=&((char far *)mfp)[sizeof(MidiFilePrefix)];
     mit->nextptr=&((char far *)mfp)[offset];
@@ -414,9 +424,7 @@ void far *load_midi(const char *file, unsigned long *sz)
     if(rcount != size) {
       farfree(data);
       data=NULL;
-      printf( "Cannot load midi file %X %X, %X %X %X %X\n",
-               (unsigned)size,
-              rcount, p[0], p[1], p[2], p[3]);
+      printf( "Cannot load midi file\n");
     }
     
   } else {
@@ -475,6 +483,7 @@ int main(int argc, char **argv)
     farfree(data);
   }
   closetimer();
+  allNotesOff();
   return 0;
 }
 

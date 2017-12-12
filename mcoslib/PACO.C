@@ -449,7 +449,7 @@ int main()
 			case 3:Sobre();break;
 		}
 	}while(op!=4);
-	
+	Midi_Done();
 	modo3h();
 	UnloadAll();
 	return 0;
@@ -478,13 +478,13 @@ void Play_game()
 	
 	oldclk=gethseconds();
 
-	if(musica==2) Midi_Play(MusSeg);
+	if(musica==2) Midi_Play(MusSeg, MusicLen);
 	UpDateScreen();
 
 	while(!done)
 	{
 		set=10;
-		if((musica==2)&&(Midi_Status()==0)) Midi_Play(MusSeg);
+		if((musica==2)&&(Midi_Status()==0)) Midi_Play(MusSeg, MusicLen);
 		Game.count++;
 
 
@@ -866,7 +866,7 @@ void SetSomOnOff()
 	{
 		case 1:
 				musica=2;
-				Midi_Play(MusSeg);
+				Midi_Play(MusSeg, MusicLen);
 				break;
 		case 2:
 				musica=1;
