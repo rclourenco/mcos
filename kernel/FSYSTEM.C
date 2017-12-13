@@ -1010,6 +1010,74 @@ WORD LerCaracter(WORD bloco)
 
 }
 
+
+WORD LerFicheiro(WORD bloco, char far *ptr, WORD len)
+{
+	WORD deslocamento;
+	WORD cluster_anterior;
+	WORD tamcluster;
+	BYTE caracter;
+	BYTE drive;
+	WORD count=0;
+	WORD ksize=0;
+	ERRO=FALSE;
+	if((FP_SEG(BlocoControlo[bloco])==0)||(bloco>=FILES))
+	{
+		ERRO=EBADF;
+		return 0;
+	}
+	if(!(BlocoControlo[bloco]->Fpos<BlocoControlo[bloco]->Tamanho))
+	{
+		return 0;
+	}
+	drive=BlocoControlo[bloco]->Drive;
+	tamcluster=Drive[drive].TamSector*Drive[drive].SectorCluster;
+	while(len) {
+	  deslocamento=BlocoControlo[bloco]->Fpos%tamcluster;
+	  if(deslocamento==0)
+	  {
+		  cluster_anterior=BlocoControlo[bloco]->Cluster;
+		  if(BlocoControlo[bloco]->Cluster==0)
+			  BlocoControlo[bloco]->Cluster=BlocoControlo[bloco]->FCluster;
+		  else
+			  BlocoControlo[bloco]->Cluster=GetFat(drive,BlocoControlo[bloco]->Cluster);
+		  if(!((BlocoControlo[bloco]->Cluster>0)&&(BlocoControlo[bloco]->Cluster<__EOF)))
+		  {
+			  BlocoControlo[bloco]->Cluster=cluster_anterior;
+			  ERRO=EFAULT;
+			  return 0;
+		  }
+		  LerCluster(drive,BlocoControlo[bloco]->Cluster,BlocoControlo[bloco]->Buffer);
+		  if(ERRO)
+		  {
+			  BlocoControlo[bloco]->Cluster=cluster_anterior;
+			  return 0;
+		  }
+		  
+	  }
+	  ksize = tamcluster-deslocamento;
+	  if(ksize > BlocoControlo[bloco]->Tamanho-BlocoControlo[bloco]->Fpos )
+	    ksize=BlocoControlo[bloco]->Tamanho-BlocoControlo[bloco]->Fpos;
+
+	  if(ksize==0)
+	    break;
+
+	  if(ksize>len)
+	    ksize=len;
+
+	  _fmemcpy(ptr+count,BlocoControlo[bloco]->Buffer+deslocamento,ksize);
+
+	  BlocoControlo[bloco]->Fpos+=ksize;
+	  count+=ksize;
+	  len-=ksize;
+	  
+	  if(!(BlocoControlo[bloco]->Fpos<BlocoControlo[bloco]->Tamanho))
+	    break;
+	}
+	return count;
+}
+
+
 void PosicionarFicheiro(WORD bloco,long deslocamento,BYTE modo)
 {
 	DWORD n_pos;

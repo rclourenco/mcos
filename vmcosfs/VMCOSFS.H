@@ -194,6 +194,7 @@ WORD GetFreeBloco();
 void ApagaErro();                                                  //user
 char *GetMsgErro(unsigned int erro);    //user
 
+WORD LerFicheiro(WORD bloco, char far *ptr, WORD len);
 
 extern char *MsgErro[NUMERROS];
 

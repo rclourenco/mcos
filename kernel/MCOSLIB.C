@@ -443,3 +443,16 @@ void dump_mem2(unsigned seg, unsigned offset, unsigned len)
   writestr("\r\n");
 }
 
+void _fmemcpy(void far *a, void far *b, unsigned s)
+{
+	asm {
+		push ds;
+		les di, a;
+		lds si, b;
+		mov cx, s;
+		cld;
+		rep movsb;
+		pop ds;
+	}
+}
+

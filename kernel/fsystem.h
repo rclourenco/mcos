@@ -146,6 +146,8 @@ DWORD Ficheiro_Pos(WORD bloco);                                     //user
 DWORD Ficheiro_Size(WORD bloco);                                    //user
 WORD GetFreeBloco();
 
+WORD LerFicheiro(WORD bloco, char far *ptr, WORD len); //user;
+
 extern TDRIVE Drive[MAXDRIVES];
 extern TFCB far * far *BlocoControlo;
 extern BOOTRECORD far *BootRecord;

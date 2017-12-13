@@ -57,6 +57,8 @@ void writenum(unsigned d);
 void writelongnum(unsigned long);
 void kprintf(char *str, ...);
 
+void _fmemcpy(void far *a, void far *b, unsigned s);
+
 unsigned long longmul2(unsigned long a, unsigned long b);
 
 extern char hextab[];

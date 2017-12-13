@@ -137,6 +137,55 @@ void copymd(char drv, char *mfile, char *dpath)
 	fclose(fp);
 }
 
+#define buffersize 3000
+char buffer[buffersize];
+
+void testread(char drv, char *mfile, char *dpath)
+{
+	char drive=0;
+	WORD handle;
+	WORD ch;
+	WORD lines;
+	
+	FILE *fp;
+	switch(drv)
+	{
+		case 'A':
+		case 'a':drive=0;break;
+		case 'B':
+		case 'b':drive=1;break;
+	}
+	MountDrive(drv);
+	ApagaErro();
+	fp=fopen(dpath,"wb");
+	if(!fp) {
+		fprintf(stderr,"Erro a criar ficheiro de destino %s\n", dpath);
+		return;
+	}
+	handle=AbrirFicheiro(drive,mfile,LEITURA);
+	printf("Drive %d %s\n", drive, mfile);
+	if((handle>=FILES)||(ERRO))
+	{
+		fprintf(stderr,"Erro a abrir ficheiro de origem...\n");
+		escreve_erro();
+		fclose(fp);
+		return;
+	}
+	lines=0;
+	while(!Fim_Ficheiro(handle))
+	{
+	  WORD c=0;
+	  WORD count=LerFicheiro(handle, buffer, buffersize);
+		//ch=LerCaracter(handle);
+		if(ERRO) break;
+		while(count--)
+		  fputc(buffer[c++],fp);
+	}
+	FecharFicheiro(handle);
+	fclose(fp);
+}
+
+
 /*
 void copymm(char drv, char *mfile, char *dpath)
 {
@@ -262,6 +311,57 @@ void copy(char *from, char *to)
 }
 
 
+void test(char *from, char *to)
+{
+	char from_drv=0;
+	char to_drv=0;
+	if(from[0]=='/') {
+		from_drv=-1;
+		if(from[2]=='/') {
+			switch(from[1])
+			{
+				case 'a':
+				case 'A':
+				case 'b':
+				case 'B':  from_drv=from[1];
+				break;
+			}
+		}
+
+	}
+	if(to[0]=='/') {
+		to_drv=-1;
+		if(to[2]=='/') {
+			switch(to[1])
+			{
+				case 'a':
+				case 'A':
+				case 'b':
+				case 'B':  to_drv=to[1];
+				break;
+			}
+		}
+	}
+	if(from_drv==-1 || to_drv==-1){
+		fprintf(stderr, "Invalid syntax\n");
+		return;
+	}
+	if(from_drv && to_drv) {
+	      //	copymm(
+	      //		from_drv,&from[3],
+	      //		to_drv,  &to[3]
+	      //	);
+	}
+	else if(from_drv) {
+		testread( from_drv,&from[3],to );
+	}
+	else if(to_drv) {
+	  printf("Not implemented...\n");
+		//copydm(from,to_drv,&to[3]);
+	}
+}
+
+
 main(int argc, char **argv)
 {
 	if(!INITFS())
@@ -303,6 +403,18 @@ main(int argc, char **argv)
 				fprintf(stderr, "missing arguments...\n");
 			}
 		}
+		else if(!strcmp(argv[1],"test")) {
+			if(argc==3) {
+				//copy(argv[2],".");
+			}
+			else if(argc==4) {
+				test(argv[2],argv[3]);
+			}
+			else {
+				fprintf(stderr, "missing arguments...\n");
+			}
+		}
+
 	}
 	CLOSEFS();
 	return 0;

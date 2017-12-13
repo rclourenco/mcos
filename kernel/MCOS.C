@@ -461,6 +461,20 @@ WORD ReadChar(WORD handle)
 	return 0;
 }
 
+WORD Read(WORD handle, char far *ptr, WORD len)
+{
+	BYTE flags = 0;
+	int idx = getDescriptorIdx(CurProcess, handle, &flags);
+	if(idx<0) {
+		return 0;
+	}
+
+	if( (flags & DEVMASK) == REGULAR )
+		return LerFicheiro(idx, ptr, len);
+	return 0;
+}
+
+
 void Seek(WORD handle, long deslocamento, BYTE modo)
 {
 	BYTE flags = 0;
@@ -659,7 +673,8 @@ void interrupt Dispatcher(unsigned bp, unsigned di,unsigned si,
 			break;
 		case 87:ax=EndOfFile(bx);break;
 		case 88:Truncate(bx);break;
-
+		case 89:ax=Read(bx,(BYTE far *)MK_FP(es,dx),cx); break;
+//		case 90:ax=Write(bx,(BYTE far *)MK_FP(es,dx),cx); break;
 		
 		default:ax=0xFFFF;break;
 	}

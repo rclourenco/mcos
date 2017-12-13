@@ -270,17 +270,19 @@ unsigned gethseconds()
 
 unsigned mcos_read(int handle, unsigned char far *buffer, unsigned len)
 {
-	unsigned count=0;
-	while(len--)
-	{
-		int ch=mcos_fgetc(handle);
-		if(ch<0)
-			break;
-		*buffer=ch;
-		count++;
-		buffer++;
+	unsigned r;
+	asm {
+		push es;
+		mov bx,handle;
+		mov cx,len;
+		les dx,buffer;
+		mov ah,89;
+		int 80h;
+		mov r,ax;
+		pop es;
 	}
-	return count;
+	return r;
+
 }
 
 void far *farmalloc(unsigned s)

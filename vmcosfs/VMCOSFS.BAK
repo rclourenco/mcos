@@ -26,6 +26,26 @@ TFCB **BlocoControlo;
 BOOTRECORD *BootRecord;
 WORD ERRO;
 
+void GetDate(TDATA far *data)
+{
+	struct dosdate_t d;
+	_dos_getdate(&d);
+
+	data->ano=d.year;
+	data->mes=d.month;
+	data->dia=d.day;
+}
+
+void GetHora(THORA *hora)
+{
+	struct dostime_t t;
+	_dos_gettime(&t);
+	hora->hora=t.hour;
+	hora->minutos=t.minute;
+	hora->segundos=t.second;
+	hora->centesimos=t.hsecond;
+}
+
 
 char *GetMsgErro(unsigned int erro)    //user
 {
@@ -1018,6 +1038,65 @@ WORD LerCaracter(WORD bloco)
 	return caracter;
 
 }
+
+WORD LerFicheiro(WORD bloco, char far *ptr, WORD len)
+{
+	WORD deslocamento;
+	WORD cluster_anterior;
+	WORD tamcluster;
+	BYTE caracter;
+	BYTE drive;
+	WORD count=0;
+	WORD ksize=0;
+	ERRO=FALSE;
+	if((FP_SEG(BlocoControlo[bloco])==0)||(bloco>=FILES))
+	{
+		ERRO=EBADF;
+		return 0xFFFF;
+	}
+	if(!(BlocoControlo[bloco]->Fpos<BlocoControlo[bloco]->Tamanho))
+	{
+		return __EOF;
+	}
+	drive=BlocoControlo[bloco]->Drive;
+	tamcluster=Drive[drive].TamSector*Drive[drive].SectorCluster;
+	while(len) {
+	  printf("Fpos %lu\n", BlocoControlo[bloco]->Fpos);
+	  deslocamento=BlocoControlo[bloco]->Fpos%tamcluster;
+	  printf("Deslocamento %u\n", deslocamento);
+	  if(deslocamento==0)
+	  {
+		  cluster_anterior=BlocoControlo[bloco]->Cluster;
+		  if(BlocoControlo[bloco]->Cluster==0)
+			  BlocoControlo[bloco]->Cluster=BlocoControlo[bloco]->FCluster;
+		  else
+			  BlocoControlo[bloco]->Cluster=GetFat(drive,BlocoControlo[bloco]->Cluster);
+		  if(!((BlocoControlo[bloco]->Cluster>0)&&(BlocoControlo[bloco]->Cluster<__EOF)))
+		  {
+			  BlocoControlo[bloco]->Cluster=cluster_anterior;
+			  ERRO=EFAULT;
+			  return 0xFFFF;
+		  }
+		  LerCluster(drive,BlocoControlo[bloco]->Cluster,BlocoControlo[bloco]->Buffer);
+		  if(ERRO)
+		  {
+			  BlocoControlo[bloco]->Cluster=cluster_anterior;
+			  return 0xFFFF;
+		  }
+		  
+	  }
+	  ksize = tamcluster-deslocamento;
+	  if(ksize>len)
+	    ksize=len;
+	  _fmemcpy(ptr+count,BlocoControlo[bloco]->Buffer+deslocamento,ksize);
+	  BlocoControlo[bloco]->Fpos+=ksize;
+	  count+=ksize;
+	  len-=ksize;
+	}
+	return count;
+
+}
+
 
 void PosicionarFicheiro(WORD bloco,long deslocamento,BYTE modo)
 {
