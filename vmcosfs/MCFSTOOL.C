@@ -224,6 +224,49 @@ void copymm(char drv, char *mfile, char *dpath)
 */
 
 
+void testwrite(char *dpath,char drv, char *mfile)
+{
+	char drive=0;
+	WORD handle;
+	WORD ch;
+	size_t count;
+	FILE *fp;
+	switch(drv)
+	{
+		case 'A':
+		case 'a':drive=0;break;
+		case 'B':
+		case 'b':drive=1;break;
+	}
+	MountDrive(drv);
+	ApagaErro();
+	fp=fopen(dpath,"rb");
+	handle=AbrirFicheiro(drive,mfile,CRIAR_F|ESCREVER|EXPANDIR);
+	printf("Drive %d %s\n", drive, mfile);
+	if((handle>=FILES)||(ERRO))
+	{
+		fprintf(stderr,"Erro a abrir ficheiro de origem...\n");
+		escreve_erro();
+		return;
+	}
+	while( (count=fread(buffer,1,3000,fp))!=0 )
+	{
+		//int i=0;
+		//for (i=0;i<count;i++) {
+		//	putchar(buffer[i]);
+		//}
+		//ch=fgetc(fp);
+		printf("Count %u\n", count);
+		EscreverFicheiro(handle,buffer,count);
+		//while()
+		if(ERRO) break;
+	}
+	FecharFicheiro(handle);
+	fclose(fp);
+	putchar('\n');
+}
+
+
 void copydm(char *dpath,char drv, char *mfile)
 {
 	char drive=0;
@@ -253,6 +296,8 @@ void copydm(char *dpath,char drv, char *mfile)
 	while(!feof(fp))
 	{
 		ch=fgetc(fp);
+		if(ch>255)
+			break;
 		EscreverCaracter(handle,ch);
 		if(ERRO) break;
 	}
@@ -353,11 +398,12 @@ void test(char *from, char *to)
 	      //	);
 	}
 	else if(from_drv) {
+		printf("Test read\n");
 		testread( from_drv,&from[3],to );
 	}
 	else if(to_drv) {
-	  printf("Not implemented...\n");
-		//copydm(from,to_drv,&to[3]);
+		printf("Test Write\n");
+		testwrite(from,to_drv,&to[3]);
 	}
 }
 
