@@ -1,0 +1,30 @@
+"The trouble with programmers
+ is that you can never
+ tell what a programmer
+ is doing until it's too late."
+(Seymour Cray)@
+"Writing in C or C++ is like running
+ a chain saw with all the safety guards removed."
+(Bob Gray)@
+"If Java had true garbage collection,
+ most programs would delete themselves upon execution."
+(Robert Sewell)@
+"One of the main causes of the fall of the Roman Empire
+ was that-lacking zero-they had no way to indicate 
+ successful termination of their C programs."
+(Robert Firth)@
+"There are only two kinds of programming languages:
+ those people always bitch about and those nobody uses."
+(Bjarne Stroustrup)@
+3@
+   "A hacker on a roll may be able to produce-in a period of a few
+   
+ months-something that a small development group (say, 7-8 people)
+ 
+ would have a hard time getting together over a year.
+ 
+    IBM used to report that certain programmers might be as much as
+    
+ 100 times as productive as other workers, or more."
+ 
+(Peter Seebach)
