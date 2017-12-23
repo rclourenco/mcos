@@ -908,6 +908,110 @@ WORD EscreverCaracter(WORD bloco,BYTE caracter)
 }
 
 
+WORD EscreverFicheiro(WORD bloco, char far *ptr, WORD len)
+{
+	WORD deslocamento;
+	WORD tamcluster;
+	WORD cluster_anterior;
+	BYTE drive;
+	WORD count=0;
+	WORD ksize=0;
+	ERRO=FALSE;
+	if((BlocoControlo[bloco]==NULL)||(bloco>=FILES))
+	{
+		ERRO=EBADF;
+		return 0;
+	}
+	if(!(BlocoControlo[bloco]->Modo&ESCREVER))
+	{
+		ERRO=EACCES;
+		return 0;
+	}
+	if(BlocoControlo[bloco]->Fpos+len>BlocoControlo[bloco]->Tamanho)
+	{
+		if(!(BlocoControlo[bloco]->Modo&EXPANDIR))
+		{
+		  /*TODO reduce length*/
+			return 0;
+		}
+	}
+	drive=BlocoControlo[bloco]->Drive;
+	tamcluster=Drive[drive].TamSector*Drive[drive].SectorCluster;
+	while(len) {
+	  deslocamento=BlocoControlo[bloco]->Fpos%tamcluster;
+	  if(deslocamento==0)
+	  {
+		  cluster_anterior=BlocoControlo[bloco]->Cluster;
+		  if(BlocoControlo[bloco]->FCluster==0)
+		  {
+			  BlocoControlo[bloco]->FCluster=AlocaCluster(drive);
+			  BlocoControlo[bloco]->Cluster=BlocoControlo[bloco]->FCluster;
+		  }
+		  else
+		  {
+			  if(BlocoControlo[bloco]->Cluster==0)
+				    BlocoControlo[bloco]->Cluster=BlocoControlo[bloco]->FCluster;
+			  else
+				    BlocoControlo[bloco]->Cluster=GetFat(drive,BlocoControlo[bloco]->Cluster);
+			  if(BlocoControlo[bloco]->Cluster==0)
+			  {
+				  BlocoControlo[bloco]->Cluster=cluster_anterior;
+				  ERRO=EFAULT;
+				  return count;
+			  }
+			  if(BlocoControlo[bloco]->Cluster>=__EOF)
+			  {
+				  BlocoControlo[bloco]->Cluster=AlocaCluster(drive);
+				  SetFat(drive,cluster_anterior,BlocoControlo[bloco]->Cluster);
+			  }
+			  else
+			  {
+				  LerCluster(drive,BlocoControlo[bloco]->Cluster,BlocoControlo[bloco]->Buffer);
+				  if(ERRO)
+				  {
+					  BlocoControlo[bloco]->Cluster=cluster_anterior;
+					  return count;
+				  }
+			  }
+		  }
+		  if(BlocoControlo[bloco]->Cluster==0)
+		  {
+			  ERRO=EFAULT;
+			  return count;
+		  }
+	  }
+	  ksize = tamcluster-deslocamento;
+
+	  if(ksize==0)
+	    break;
+
+	  if(ksize>len)
+	    ksize=len;
+
+	  _fmemcpy(BlocoControlo[bloco]->Buffer+deslocamento,ptr+count,ksize);
+
+	  BlocoControlo[bloco]->Fpos+=ksize;
+	  count+=ksize;
+	  len-=ksize;
+
+	  deslocamento=BlocoControlo[bloco]->Fpos%tamcluster;
+	  if(deslocamento==0)
+	  {
+		  EscreverCluster(drive,BlocoControlo[bloco]->Cluster,BlocoControlo[bloco]->Buffer);
+		  if(ERRO)
+		  {
+			  BlocoControlo[bloco]->Fpos-=ksize;
+			  count-=ksize;
+			  return count;
+		  }
+	  }
+	  if(BlocoControlo[bloco]->Fpos>BlocoControlo[bloco]->Tamanho)
+		  BlocoControlo[bloco]->Tamanho=BlocoControlo[bloco]->Fpos;
+	}
+	return count;
+
+}
+
 void EscreverCluster(BYTE drive,WORD cluster,BYTE far *buffer)
 {
 	WORD cont;

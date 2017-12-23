@@ -39,14 +39,17 @@ void setdisk()
 }
 
 
-int main()
+int main(int argc, char **argv)
 {
 	int c;
 	unsigned c2;
 	FILE *fp;
-	diskfp=fopen("NEW.IMG", "wb");
+	if( argc!=3 ) {
+	  printf("Invalid arguments...\n");
+	}
+	diskfp=fopen(".IMG", "rb");
 	if(!diskfp) {
-	  printf("Cannot create disk image");
+	  printf("Cannot open disk image");
 	  exit(2);
 	}
   setdisk();
