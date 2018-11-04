@@ -3,14 +3,14 @@
 #include <graphics.h>
 #include <dos.h>
 #include "widgets.h"
-
+#include "graphsys.h"
 
 
 void test()
 {
-    setcolor(2);
-    setfillstyle(SOLID_FILL,2);
-    bar(10,10,300,30);
+    gx->setcolor(2);
+    gx->setfillstyle(SOLID_FILL,2);
+    gx->bar(10,10,300,30);
     displayBackground();
 }
 
@@ -184,7 +184,7 @@ int main()
    TObjectUI *container;
    TObjectUI *hsb;
    TObjectUI *vsb;
-   int graphdriver = DETECT, graphmode;
+
    int i=0;
    int mih=3;
    int mch=(10-1)*mih;
@@ -193,36 +193,37 @@ int main()
    int mcv=(10-1)*miv;
 
    load_disclaimers("contents.txt");
-   initgraph(&graphdriver, &graphmode, "c:\\devtools\\tc\\bgi");
+   initgraphics("BGI_AUTO", "c:\\devtools\\tc\\bgi");
 
+   getch();
 
    for(i=0;i<10;i++) {
-	setcolor(ctab[i]);
-	settextstyle(TRIPLEX_FONT,HORIZ_DIR,5);
+	gx->setcolor(ctab[i]);
+	gx->settextstyle(TRIPLEX_FONT,HORIZ_DIR,5);
 	printlines(60+i*mih,100+i*miv,"Welcome to DeathStar\n");
-	settextstyle(TRIPLEX_FONT,HORIZ_DIR,2);
+	gx->settextstyle(TRIPLEX_FONT,HORIZ_DIR,2);
 	printlines(160+i*mih,200+i*miv,"RCL Productions 2017 (c)\n");
 
-	settextstyle(TRIPLEX_FONT,HORIZ_DIR,5);
+	gx->settextstyle(TRIPLEX_FONT,HORIZ_DIR,5);
 	printlines(60+mch*2-i*mih,100+i*miv,"Welcome to DeathStar\n");
-	settextstyle(TRIPLEX_FONT,HORIZ_DIR,2);
+	gx->settextstyle(TRIPLEX_FONT,HORIZ_DIR,2);
 	printlines(160+mch*2-i*mih,200+i*miv,"RCL Productions 2017 (c)\n");
 
 	delay(50);
    }
 
-   settextstyle(DEFAULT_FONT,HORIZ_DIR,0);
+   gx->settextstyle(DEFAULT_FONT,HORIZ_DIR,0);
    sleep(1);
    uiButtonInitRow(uiButtons, 10,40,20,10);
    container=cvtButtons();
    vsb=gxCreateScrollUI(container,502,100,20,300,0,0,100,50);
    hsb=gxCreateScrollUI(container,100,400,400,20,1,0,5,2);
-   gxCreateTextUI(container,100,100,200,100,lines);
+   gxCreateTextUI(container,100,100,300,200,lines);
    gxRun(container);
-   cleardevice();
+   gx->cleardevice();
    printlines(50,150,dptr[6]);
    getch();
-   closegraph();
+   gx->closegraph();
    printf("Bye!\n");
    return 0;
 }

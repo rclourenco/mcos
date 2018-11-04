@@ -70,12 +70,6 @@ char *overlaycolortext="white";
 char *overlaycolorhigh="green";
 char *overlaycolorhighborder="white";
 
-int xmin=0;
-int xmax=639;
-int ymin=0;
-int ymax=479;
-
-
 void srectangle(int x1, int y1, int x2, int y2)
 {
 	int d=3;
@@ -83,7 +77,7 @@ void srectangle(int x1, int y1, int x2, int y2)
 	gx->arc(x1+d,y1+d,90, 180,d);
 	gx->arc(x2-d,y1+d, 0,  90,d);
 	gx->arc(x1+d,y2-d,180,270,d);
-	gx->arc(x2-d,y2-d,270,  0,d);
+	gx->arc(x2-d,y2-d,270,360,d);
 
 	gx->line(x1+d,y1,x2-d,y1);
 	gx->line(x1+d,y2,x2-d,y2);
@@ -192,7 +186,7 @@ void uiButtonInitRow(TButtonUI *buttons, int xi, int yi, int h, int sp)
     int tsize=1;
     while(buttons->w) {
 	if(buttons->caption) {
-		tsize=textwidth(buttons->caption);
+		tsize=gx->textwidth(buttons->caption);
 		if(tsize+20>buttons->w) {
 			buttons->w=tsize+20;
 		}
@@ -626,16 +620,6 @@ int scroll_proc(TObjectUI *o, TEvent *ev)
 void displayBackground()
 {
     gx->cleardevice();
-    //setcolor(2);
-    //rectangle(xmin,ymin,xmax,ymax);
-   /* al_draw_line(1,25,program.winwidth-1,25, al_color_name("green"),2);
-    al_draw_line(1,55,program.winwidth-1,55, al_color_name("green"),2);
-    al_draw_textf(program.font, al_color_name("white"), program.winwidth/2, 5,ALLEGRO_ALIGN_CENTRE, "%s", "Automatonic (R)");
-    */
-//    uiButtonDrawRow(uiButtons);
-//    uiButtonDrawRow(uiButtonsScreenPos);
-//    uiDrawScrollBar(&hsb);
-//    uiDrawScrollBar(&vsb);
 }
 
 
@@ -755,8 +739,8 @@ TObjectUI *gxCreateButtonUI(TObjectUI *parent, int x1, int y1, int w, int h, con
 	b->action=action;
 
 	if(b->caption) {
-		int tsx=textwidth(b->caption);
-		int tsy=textheight(b->caption);
+		int tsx=gx->textwidth(b->caption);
+		int tsy=gx->textheight(b->caption);
 		if(tsx>w)
 			w=tsx;
 		b->tx=(w-tsx)/2;
@@ -840,7 +824,7 @@ void desktop_draw(TObjectUI *o, int x, int y)
 	int x2=o->x2+x;
 	int y2=o->y2+y;
 
-	setfillstyle(SOLID_FILL,1);
+	gx->setfillstyle(SOLID_FILL,1);
 	gx->bar(x1,y1,x2,y2);
 }
 
@@ -864,7 +848,7 @@ void printlines(int x, int y, const char *lines)
 	{
 		copylines(buffer, &lines,68);
 		gx->outtextxy(x,y,buffer);
-		y+=textheight("H")+2;
+		y+=gx->textheight("H")+2;
 	}
 }
 
@@ -982,9 +966,9 @@ TObjectUI *gxCreateDialogUI(TObjectUI *parent, int x1, int y1, int w, int h, con
 	dl->dragstate=0;
 
 	if(x1==-1)
-		x1=(640-w)/2;
+		x1=(gx->getmaxx()+1-w)/2;
 	if(y1==-1)
-		y1=(480-h)/2;
+		y1=(gx->getmaxy()+1-h)/2;
 
 	o=gxCreateObjectUI(parent,x1,y1,w,h,dl,dialog_draw,dialog_proc, WDIALOG_ID, (int)dl);
 	if(!o)
@@ -1068,7 +1052,7 @@ void gxProcessWindowsEvents(TObjectUI *o, TEvent *ev)
 		x2=dl->drx+o->w;
 		y1=dl->dry;
 		y2=dl->dry+o->h;
-		mouse_hide();
+		gx->mouse_hide();
 		gx->setwritemode(XOR_PUT);
 		gx->setcolor(14);
 		gx->setlinestyle(DOTTED_LINE,1,THICK_WIDTH);
@@ -1076,7 +1060,7 @@ void gxProcessWindowsEvents(TObjectUI *o, TEvent *ev)
 		gx->setwritemode(COPY_PUT);
 		gx->setlinestyle(SOLID_LINE,1,1);
 		gx->setwritemode(COPY_PUT);
-		mouse_show();
+		gx->mouse_show();
 		dl->lset=0;
 	}
 	if(set) {
@@ -1086,14 +1070,14 @@ void gxProcessWindowsEvents(TObjectUI *o, TEvent *ev)
 		x2=dl->drx+o->w;
 		y1=dl->dry;
 		y2=dl->dry+o->h;
-		mouse_hide();
+		gx->mouse_hide();
 		gx->setwritemode(XOR_PUT);
 		gx->setcolor(14);
 		gx->setlinestyle(DOTTED_LINE,1,THICK_WIDTH);
 		gx->rectangle(x1,y1,x2,y2);
 		gx->setwritemode(COPY_PUT);
 		gx->setlinestyle(SOLID_LINE,1,1);
-		mouse_show();
+		gx->mouse_show();
 		dl->lset=1;
 	}
 	ev->type=0;
@@ -1107,20 +1091,20 @@ char *gxRunDialog(TObjectUI *root, TObjectUI *caller)
    TEvent ev;
    char *action=NULL;
    if(caller) {
-	mouse_hide();
-	gxRedrawObjectUI(caller,0,0,639,479);
-	mouse_show();
+	gx->mouse_hide();
+	gxRedrawObjectUI(caller,0,0,gx->getmaxx(),gx->getmaxy());
+	gx->mouse_show();
    }
 //   setbkcolor(0);
 //   test();
-   mouse_hide();
-   gxDrawObjectUI(root,0,0,639,479);
-   mouse_show();
+   gx->mouse_hide();
+   gxDrawObjectUI(root,0,0,gx->getmaxx(),gx->getmaxy());
+   gx->mouse_show();
    ox=0;
    oy=0;
    ob=0;
    while(1){
-    mouse_get(&x,&y,&b);
+    gx->mouse_get(&x,&y,&b);
     ev.type=0;
     ev.key=0;
 
@@ -1194,21 +1178,21 @@ char *gxRunDialog(TObjectUI *root, TObjectUI *caller)
     }
 
     if(root->flags & (WREDRAW|WCREDRAW)) {
-	mouse_hide();
+	gx->mouse_hide();
 	if(root->flags&WBGDIRTY) {
-		gxDrawObjectUI(caller,0,0,639,479);
+		gxDrawObjectUI(caller,0,0,gx->getmaxx(),gx->getmaxy());
 		root->flags &= ~WBGDIRTY;
 	}
-	gxRedrawObjectUI(root,0,0,639,479);
-	mouse_show();
+	gxRedrawObjectUI(root,0,0,gx->getmaxx(),gx->getmaxy());
+	gx->mouse_show();
     }
     delay(1);
    }
 
    if(caller) {
-	mouse_hide();
-	gxDrawObjectUI(caller,0,0,639,479);
-	mouse_show();
+	gx->mouse_hide();
+	gxDrawObjectUI(caller,0,0,gx->getmaxx(),gx->getmaxy());
+	gx->mouse_show();
    }
    return action;
 }
@@ -1220,15 +1204,15 @@ void gxRun(TObjectUI *root)
    TEvent ev;
    char *action;
 
-   setbkcolor(0);
-   test();
-   gxDrawObjectUI(root,0,0,639,479);
-   mouse_show();
+   gx->setbkcolor(0);
+
+   gxDrawObjectUI(root,0,0,gx->getmaxx(),gx->getmaxy());
+   gx->mouse_show();
    ox=0;
    oy=0;
    ob=0;
    while(1){
-    mouse_get(&x,&y,&b);
+    gx->mouse_get(&x,&y,&b);
     ev.type=0;
     ev.key=0;
 
@@ -1301,13 +1285,13 @@ void gxRun(TObjectUI *root)
     }
 
     if(root->flags & (WREDRAW|WCREDRAW)) {
-	mouse_hide();
-	gxRedrawObjectUI(root,0,0,639,479);
-	mouse_show();
+	gx->mouse_hide();
+	gxRedrawObjectUI(root,0,0,gx->getmaxx(),gx->getmaxy());
+	gx->mouse_show();
     }
     delay(1);
    }
-   mouse_hide();
+   gx->mouse_hide();
 
 }
 

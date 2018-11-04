@@ -34,6 +34,8 @@ WORD pointer[16]={
 main()
 {
 	int a,b;
+	int oms=-1, omx=-1, omy=-1;
+	int done=0;
 	WORD far *p;
 	clrscr();
 	if(!GetVbeInfo(&VbeInfo)) exit(0);
@@ -88,7 +90,12 @@ main()
 		long int dim = ModeInfo.Width;
 		//puts("TESTE_OK");
 		getch();
-		for(a=0;a<ModeInfo.Height;a++) {
+		Color=14;
+		grectangle(10, 10, ModeInfo.Width-11, ModeInfo.Height-11);
+		FillColor=200;
+		gbar(11,11,ModeInfo.Width-12, ModeInfo.Height-12);
+		Color=15;
+/*		for(a=0;a<ModeInfo.Height;a++) {
 			for(b=0;b<dim;b++)
 			{
 				float x = (a%80 ^ b%80)+(sin(b/1)+1)*20;
@@ -97,7 +104,7 @@ main()
 				//VESAPutByte(a*dim+b, b%2);
 			}
 		}
-
+*/
 		getch();
 		for(a=80;a<304;a++) {
 			VESAHLine(a*dim+80, a*dim+704, a);
@@ -106,9 +113,28 @@ main()
 
 		vgetimage(200, 100, 219, 129, (GIMAGE *)tmp);
 
+		gline(100, 100, 400, 400);
+		gsetwritemode(XOR_PUT);
+		gline(400, 400, 100, 599);
+
+		TextColor=40;
+		TextBackGround=255;
+		gsetwritemode(COPY_PUT);
+		getch();
+		b=0;
+		for(a=0;a<=16;a++) {
+			TextSize=a;
+			TextColor=30+a;
+			//b+=TextSize;
+			writest(10, 10+b, "The quick brown fox jumps over the lazy dog!");
+			b+=TextSize+2;
+		}
+		//gsetwritemode(COPY_PUT);
+
 		for(a=0;a<600;a+=30) {
-			for(b=0;b<800;b+=40)
+		/*	for(b=0;b<800;b+=40)
 				vputimage(b, a, (GIMAGE *)tmp);
+		*/
 		}
 		//for(b=0;b<640;b++)
 		//for(a=0;a<200;a++)
@@ -116,6 +142,48 @@ main()
 			//BiosPutPixel(a,b,a+b%8);
   //		ShowRato();
 		MouseOpen();
+		MouseShow();
+		while(!done) {
+			int s;
+			int click_l;
+			int click_r;
+			int mx, my;
+			delay(1);
+			//gotoxy(1,1);
+			s=MouseStatus();
+			mx=MouseX();
+			my=MouseY();
+
+			if(oms==-1)
+				oms=s;
+			if(omx==-1)
+				omx=mx;
+			if(omy==-1)
+				omy=my;
+
+			click_l = (s&1) && !(oms&1);
+			//printf("%3d - %3d - %02X\n", MouseX(), MouseY(), s);
+			if(kbhit()) {
+				switch (getch()) {
+				case 27: done=1; break;
+				case 32: MouseHide();
+					vputimage(MouseX(), MouseY(), (GIMAGE *)tmp);
+					MouseShow();
+					break;
+				}
+			}
+
+			if((s&1) && (omx != mx || omy != my)) {
+				MouseHide();
+				glineto(mx, my);
+				//vputimage(MouseX(), MouseY(), (GIMAGE *)tmp);
+				MouseShow();
+			}
+			oms=s;
+			omx=mx;
+			omy=my;
+		}
+		MouseHide();
 		getch();
 		MouseClose();
     //		HideRato();

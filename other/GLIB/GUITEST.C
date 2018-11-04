@@ -8,10 +8,10 @@
 
 void test()
 {
-    gx->setcolor(2);
-    gx->setfillstyle(SOLID_FILL,2);
-    gx->bar(10,10,300,30);
-    displayBackground();
+//    gx->setcolor(2);
+//    gx->setfillstyle(SOLID_FILL,2);
+//    gx->bar(10,10,300,30);
+	displayBackground();
 }
 
 char *dptr[8] = {
@@ -91,7 +91,7 @@ int container_proc(TObjectUI *o, TEvent *ev)
 
 TObjectUI *cvtButtons()
 {
-	TObjectUI *container=gxCreateObjectUI(NULL,0,0,639,479,NULL,desktop_draw,container_proc,0,0);
+	TObjectUI *container=gxCreateObjectUI(NULL,0,0,gx->getmaxx(),gx->getmaxy(),NULL,desktop_draw,container_proc,0,0);
 	if(container) {
 		TButtonUI *buttons=uiButtons;
 		int id=1;
@@ -163,40 +163,53 @@ int main()
    int mih=3;
    int mch=(10-1)*mih;
 
-   int miv=6;
+   int miv=8;
    int mcv=(10-1)*miv;
 
    load_disclaimers("contents.txt");
-   initgraphics("BGI_AUTO", "c:\\devtools\\tc\\bgi");
+//   initgraphics("BGI_AUTO", "c:\\devtools\\tc\\bgi");
 
-   getch();
+   if(!initgraphics("SVGA_800x600x256", NULL)) {
+	return -2;
+   }
+
+   //getch();
+
 
    for(i=0;i<10;i++) {
-	gx->setcolor(ctab[i]);
-	gx->settextstyle(TRIPLEX_FONT,HORIZ_DIR,5);
-	printlines(60+i*mih,100+i*miv,"Welcome to DeathStar\n");
-	gx->settextstyle(TRIPLEX_FONT,HORIZ_DIR,2);
-	printlines(160+i*mih,200+i*miv,"RCL Productions 2017 (c)\n");
+	int o1, o2;
 
-	gx->settextstyle(TRIPLEX_FONT,HORIZ_DIR,5);
-	printlines(60+mch*2-i*mih,100+i*miv,"Welcome to DeathStar\n");
-	gx->settextstyle(TRIPLEX_FONT,HORIZ_DIR,2);
-	printlines(160+mch*2-i*mih,200+i*miv,"RCL Productions 2017 (c)\n");
+	gx->setcolor(ctab[i]);
+	gx->settextstyle(DEFAULT_FONT, HORIZ_DIR,3);
+	o1 = (gx->getmaxx()-gx->textwidth("Welcome to DeathStar"))/2-20;
+
+	printlines(o1+i*mih,100+i*miv, "Welcome to DeathStar\n");
+	gx->settextstyle(DEFAULT_FONT, HORIZ_DIR,2);
+	o2 = (gx->getmaxx()-gx->textwidth("RCL Productions 2017 (c)"))/2;
+	printlines(o2+i*mih,200+i*miv,"RCL Productions 2017 (c)\n");
+
+	gx->settextstyle(DEFAULT_FONT, HORIZ_DIR,3);
+	printlines(o1+mch*2-i*mih,100+i*miv,"Welcome to DeathStar\n");
+	gx->settextstyle(DEFAULT_FONT, HORIZ_DIR,2);
+	printlines(o2+mch*2-i*mih,200+i*miv,"RCL Productions 2017 (c)\n");
 
 	delay(50);
    }
 
+
    gx->settextstyle(DEFAULT_FONT,HORIZ_DIR,0);
    sleep(1);
-   uiButtonInitRow(uiButtons, 10,40,20,10);
+   uiButtonInitRow(uiButtons, (gx->getmaxx()-620)/2,40,20,10);
    container=cvtButtons();
-   vsb=gxCreateScrollUI(container,502,100,20,300,0,0,100,50);
-   hsb=gxCreateScrollUI(container,100,400,400,20,1,0,5,2);
-   gxCreateTextUI(container,100,100,300,200,lines);
+   vsb=gxCreateScrollUI(container, gx->getmaxx()-50,100,20,100+gx->getmaxy()/2,0,0,100,50);
+   hsb=gxCreateScrollUI(container,100,200+gx->getmaxy()/2,gx->getmaxx()-gx->getmaxx()/4,20,1,0,5,2);
+
+   gxCreateTextUI(container,100,100,gx->getmaxx()-200,gx->getmaxy()-210,lines);
+
    gxRun(container);
    gx->cleardevice();
-   printlines(50,150,dptr[6]);
-   getch();
+   printlines((gx->getmaxx()-540)/2,(gx->getmaxy()-180)/2,dptr[6]);
+   sleep(2);
    gx->closegraph();
    printf("Bye!\n");
    return 0;
