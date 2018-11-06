@@ -1,0 +1,89 @@
+#include <stdio.h>
+#include <string.h>
+#include <errno.h>
+
+typedef unsigned char BYTE;
+typedef unsigned short int WORD;
+typedef unsigned int DWORD;
+
+typedef struct {
+        BYTE _jmpcode[3]; //reservado
+        BYTE Fsid[8];   //indentificador do sistema de ficheiros
+        WORD Bps;        //Bytes por Sector
+        BYTE Spc;        //Sectores por Cluster
+        WORD Rs;        //Sectores Reservados
+	BYTE Fn;
+        WORD Rde;       //Numero de entradas na directoria raiz
+        WORD Lsn;       //Numero de Sectores Logicos
+        BYTE Md;        //tipo de media
+        WORD Spf;       //Sectores na fat
+        WORD Spp;       //Sectores por pista
+        WORD Hn;        //Numero de Cabe‡as
+        DWORD Ssn;       //Sectores ocupados pelo sistema
+	DWORD LargeLsn;
+	BYTE PhysicalNumber;
+	BYTE CurHead;
+	BYTE Signature;
+	DWORD Serial;
+	BYTE  Label[11];
+	BYTE  SystemId[8];
+        BYTE _bootstrap[448]; //reservado
+	BYTE mark[2];
+}__attribute__((packed)) BOOTRECORD;
+
+
+BOOTRECORD boot;
+char buffer[512];
+
+int main(int argc, char **argv)
+{
+	int i;
+	FILE *fp;
+	if(argc<2) {
+		return -1;
+	}
+
+	fp=fopen(argv[1], "r+b");
+	if(!fp) {
+		fprintf(stderr, "Error: %s\n", strerror(errno));
+		return -2;
+	}
+
+	printf("S: %ld\n", sizeof(BOOTRECORD));
+	printf("X: %p\n", &((BOOTRECORD *)0)->Ssn);
+//	fseek(fp, 1440*1023, SEEK_SET);
+//	fputc(0, fp);
+
+	strncpy(boot.Fsid,"MSDOS5.0",8);
+	boot._jmpcode[0]=0xEB;
+	boot._jmpcode[1]=0x3C;
+	boot._jmpcode[2]=0x90;
+	boot.Bps=512;
+	boot.Spc=1;
+	boot.Rs=1;
+	boot.Fn=2;
+	boot.Rde=0xE0;
+	boot.Lsn=2880;
+	boot.Md=0xf0;
+	boot.Spf=9;
+	boot.Spp=18;
+	boot.Hn=2;
+	boot.Ssn=1;
+	boot.LargeLsn=0L;
+	boot.PhysicalNumber=0;
+	boot.CurHead=0;
+	boot.Signature=0x29;
+	boot.Serial=0x12345678;
+	strncpy(boot.Label,"MCOS X     ", 11);
+	strncpy(boot.SystemId,"FAT12   ", 8);
+	boot.mark[0]=0x55;
+	boot.mark[1]=0xAA;
+	fseek(fp, 0, SEEK_SET);
+	fwrite(&boot, sizeof(BOOTRECORD), 1, fp);
+	for(i=1;i<2880;i++) {
+		fwrite(buffer, 512, 1, fp);
+	}
+
+	fclose(fp);
+	return 0;
+}
