@@ -38,10 +38,14 @@
 
 #define Sem_atributos 0
 #define So_leitura 1
+#define Directory 0x10
+
 #define LEITURA 0x00
 #define CRIAR_F 0x02
 #define ESCREVER 0x01
 #define EXPANDIR 0x04
+#define DIRECTORY 0x08
+
 #define SF_INICIO 0
 #define SF_CURRENTE 1
 #define SF_FIM 2
@@ -166,13 +170,15 @@ typedef struct {
 
 typedef struct{
 	BYTE nome[13];
+	BYTE fname[9];
+	BYTE fname_ext[4];
 	BYTE Attr;
 	TDATA Data;
 	THORA Hora;
 	DWORD Tamanho;
 }TDIR_RECORD;
 
-
+WORD SearchFileEntry(BYTE drive, BYTE *nome, TDIR *ent);
 WORD Ler_Packed_Data();
 WORD Ler_Packed_Hora();
 TDATA UnPacked_Data(WORD pdata);
@@ -223,6 +229,9 @@ DWORD Ficheiro_Size(WORD bloco);                                    //user
 WORD GetFreeBloco();
 void ApagaErro();                                                  //user
 char *GetMsgErro(unsigned int erro);    //user
+
+void CloseDir(WORD dh);
+WORD ReadDir(WORD dh, TDIR_RECORD *rec);
 
 WORD LerFicheiro(WORD bloco, char far *ptr, WORD len);
 WORD EscreverFicheiro(WORD bloco, char far *ptr, WORD len);

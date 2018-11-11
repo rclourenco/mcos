@@ -28,6 +28,11 @@ TDIRCB *BlocoDirectories;
 BOOTRECORD *BootRecord;
 WORD ERRO;
 
+WORD _open_file_from(BYTE drive, TDIR *ent, BYTE modo);
+WORD _open_directory_from(BYTE drive, TDIR *ent, BYTE mode);
+WORD _read_dir(WORD dh, TDIR *ent);
+
+
 void GetDate(TDATA far *data)
 {
 	struct dosdate_t d;
@@ -714,20 +719,90 @@ WORD AlocaCluster(BYTE drive)
 	return 0;
 }
 
-WORD ProcurarEntrada(BYTE *nome,BYTE drive)
+WORD ProcurarEntrada(BYTE *nome, BYTE drive)
 {
 	WORD cont;
+	TDIR entrada;
+	TDIR *ent_ptr;
+	ent_ptr = &entrada;
+
 	if((Drive[drive].Montada==FALSE)||(drive>=MAXDRIVES))
 	{
 		ERRO=EINVDRV;
 		return 0xFFFF;
 	}
+
+	SearchFileEntry(drive, nome, ent_ptr);
+
 	for(cont=0;cont<Drive[drive].NEntradas;cont++)
 	{
 		if(NomeFicheiroCmp(Drive[drive].Entrada[cont].Nome,nome))
 			return cont;
 	}
 	return 0xFFFF;
+}
+
+WORD SearchFileEntry(BYTE drive, BYTE *nome, TDIR *ent)
+{
+	BYTE *ptr;
+	BYTE tmp[128], tmp2[128];
+	TDIR *ent_ptr = NULL;
+	TDIR cent;
+	WORD dh;
+	int found=0;
+
+	/* search for parent directory */
+	while( (ptr=strchr(nome, '/')) ) {
+		WORD l = ptr-nome;
+		strncpy(tmp, nome, l);
+		tmp[l]='\0';
+
+		found = 0;
+
+		dh = _open_directory_from(drive, ent_ptr, LEITURA);
+		while(_read_dir(dh, &cent))
+		{
+			if(NomeFicheiroCmp(cent.Nome, tmp)) {
+				found=1;
+				break;
+			}
+
+		}
+		CloseDir(dh);
+		if(!found)
+			return 0xFFFF;
+		memcpy(ent, &cent, sizeof(TDIR));
+		ent_ptr = ent;
+
+		nome=ptr+1;
+
+		printf("Continue from: %s\n", nome);
+	}
+
+	if(nome[0]=='\0') {
+		return 0xFFFF;
+	}
+
+	found=0;
+	dh = _open_directory_from(drive, ent_ptr, LEITURA);
+	while(_read_dir(dh, &cent))
+	{
+
+		if(NomeFicheiroCmp(cent.Nome, nome)) {
+			found=1;
+			break;
+		}
+
+	}
+	CloseDir(dh);
+
+	if(!found)
+		return 0xFFFF;
+
+	memcpy(ent, &cent, sizeof(TDIR));
+	GetNomeEntrada(ent->Nome, tmp2);
+	printf("Entry Found: %s => %04X\n", tmp2, ent->FCluster);
+	return 0;
 }
 
 BYTE NomeFicheiroCmp(BYTE *fnome,BYTE *nome)
@@ -797,9 +872,9 @@ void GetNomeExtensao(BYTE *fnome,BYTE *nome, BYTE *ext)
 		if(fnome[cont]=='\0' || fnome[cont]==' ') {
 			break;
 		}
-		*nome++=fnome[cont];
+		*ext++=fnome[cont];
 	}
-	*nome='\0';
+	*ext='\0';
 }
 
 
@@ -814,15 +889,74 @@ WORD GetFreeBloco()
 	return 0xFFFF;
 }
 
-WORD AbrirFicheiro(BYTE drive,BYTE *nome,BYTE modo)
+WORD _open_file_from(BYTE drive, TDIR *ent, BYTE modo)
 {
-	WORD entrada;
 	WORD bloco;
 	TFCB *enderecobloco;
 	BYTE *enderecobuffer;
 	WORD buffersize;
-	BYTE aberto=FALSE;
 	ERRO=FALSE;
+
+	if((modo&ESCREVER)&&(ent->Attr&So_leitura))
+	{
+		ERRO=EACCES;
+		return 0xFFFF;
+	}
+
+	if((modo&DIRECTORY) && !(ent->Attr&Directory))
+	{
+		ERRO=EACCES;
+		return 0xFFFF;
+	}
+
+	bloco=GetFreeBloco();
+	if(bloco>=FILES)
+	{
+		ERRO=EMFILE;
+		return 0xFFFF;
+	}
+	enderecobloco=(TFCB *)AlocaMemoria(sizeof(TFCB));
+	if(FP_SEG(enderecobloco)==0)
+	{
+		ERRO=EMEM;
+		return 0xFFFF;
+	}
+	buffersize=Drive[drive].TamSector*Drive[drive].SectorCluster;
+	enderecobuffer=(BYTE *)AlocaMemoria(buffersize);
+	if(FP_SEG(enderecobuffer)==0)
+	{
+		LibertaMemoria(enderecobloco);
+		ERRO=EMEM;
+		return 0xFFFF;
+	}
+	BlocoControlo[bloco]=enderecobloco;
+	BlocoControlo[bloco]->Entrada=ent;
+	BlocoControlo[bloco]->Tamanho=BlocoControlo[bloco]->Entrada->Tamanho;
+	BlocoControlo[bloco]->Modo=modo;
+	BlocoControlo[bloco]->Fpos=0;
+	BlocoControlo[bloco]->Drive=drive;
+	BlocoControlo[bloco]->Buffer=enderecobuffer;
+	BlocoControlo[bloco]->FCluster=BlocoControlo[bloco]->Entrada->FCluster;
+	BlocoControlo[bloco]->Cluster=0;
+	BlocoControlo[bloco]->Procid=CurProcess;
+
+	if(BlocoControlo[bloco]->Entrada->Attr&0x10) {
+		if(BlocoControlo[bloco]->Tamanho==0 && BlocoControlo[bloco]->FCluster) {
+			WORD cluster = BlocoControlo[bloco]->FCluster;
+			while(cluster>1 && cluster < 0xfff0) {
+				BlocoControlo[bloco]->Tamanho+=buffersize; //clustersize
+				cluster = GetFat(drive, cluster);
+			}
+		}
+	}
+	return bloco;
+}
+
+WORD AbrirFicheiro(BYTE drive,BYTE *nome,BYTE modo)
+{
+	WORD entrada;
+	BYTE aberto=FALSE;
+
 	if(Strlen(nome)==0)
 	{
 		ERRO=EINVFILE;
@@ -853,11 +987,21 @@ WORD AbrirFicheiro(BYTE drive,BYTE *nome,BYTE modo)
 		ERRO=ENOFILE;
 		return 0xFFFF;
 	}
+
+	return _open_file_from(drive, &Drive[drive].Entrada[entrada], modo);
+/*
 	if((modo&ESCREVER)&&(Drive[drive].Entrada[entrada].Attr&So_leitura))
 	{
 		ERRO=EACCES;
 		return 0xFFFF;
 	}
+
+	if((modo&DIRECTORY) && !(Drive[drive].Entrada[entrada].Attr&Directory))
+	{
+		ERRO=EACCES;
+		return 0xFFFF;
+	}
+
 	bloco=GetFreeBloco();
 	if(bloco>=FILES)
 	{
@@ -899,6 +1043,7 @@ WORD AbrirFicheiro(BYTE drive,BYTE *nome,BYTE modo)
 		}
 	}
 	return bloco;
+	*/
 }
 
 BYTE VerificarAberto(TDIR *entrada)
@@ -1322,7 +1467,7 @@ WORD LerFicheiro(WORD bloco, char far *ptr, WORD len)
 			  BlocoControlo[bloco]->Cluster=cluster_anterior;
 			  return 0;
 		  }
-		  
+
 	  }
 	  ksize = tamcluster-deslocamento;
 	  if(ksize > BlocoControlo[bloco]->Tamanho-BlocoControlo[bloco]->Fpos )
@@ -1339,7 +1484,7 @@ WORD LerFicheiro(WORD bloco, char far *ptr, WORD len)
 	  BlocoControlo[bloco]->Fpos+=ksize;
 	  count+=ksize;
 	  len-=ksize;
-	  
+
 	  if(!(BlocoControlo[bloco]->Fpos<BlocoControlo[bloco]->Tamanho))
 	    break;
 	}
@@ -1597,7 +1742,7 @@ found:
 		return dh;
 	}
 	printf("Opening dir Drive %d path %s\n");
-	fh=AbrirFicheiro(drive,path,mode);
+	fh=AbrirFicheiro(drive,path,mode|DIRECTORY);
 	if(fh<FILES) {
 		BlocoDirectories[dh].handle=fh;
 		return dh;
@@ -1605,7 +1750,48 @@ found:
 	return __EOF;
 }
 
-/*TODO CloseDir*/
+WORD _open_directory_from(BYTE drive, TDIR *ent, BYTE mode)
+{
+	WORD dh;
+	WORD fh;
+
+	for(dh=0;dh<DIRS;dh++) {
+		if(BlocoDirectories[dh].handle==DCB_FREE) {
+			goto found;
+		}
+	}
+	return __EOF;
+
+
+found:
+	BlocoDirectories[dh].drive=drive;
+	BlocoDirectories[dh].rec=0;
+
+	if(!ent || ent->FCluster<2) {
+		BlocoDirectories[dh].handle=DCB_ROOT;
+		return dh;
+	}
+
+	fh=_open_file_from(drive,ent,mode|DIRECTORY);
+	if(fh<FILES) {
+		BlocoDirectories[dh].handle=fh;
+		return dh;
+	}
+	return __EOF;
+}
+
+
+void CloseDir(WORD dh)
+{
+	if(dh>=DIRS)
+		return;
+	// TODO check if in use by a file
+	if(BlocoDirectories[dh].handle<FILES) {
+		FecharFicheiro(BlocoDirectories[dh].handle);
+	}
+	BlocoDirectories[dh].handle=DCB_FREE;
+}
+
 
 WORD ReadDir(WORD dh, TDIR_RECORD *rec)
 {
@@ -1633,6 +1819,9 @@ WORD ReadDir(WORD dh, TDIR_RECORD *rec)
 				continue;
 			}
 			GetNomeEntrada(Drive[drive].Entrada[entrada].Nome,rec->nome);
+
+			GetNomeExtensao(Drive[drive].Entrada[entrada].Nome,rec->fname, rec->fname_ext);
+
 			rec->Data=UnPacked_Data(Drive[drive].Entrada[entrada].Data);
 			rec->Hora=UnPacked_Hora(Drive[drive].Entrada[entrada].Hora);
 			rec->Attr=Drive[drive].Entrada[entrada].Attr;
@@ -1651,7 +1840,7 @@ WORD ReadDir(WORD dh, TDIR_RECORD *rec)
 	{
 		TDIR buffer;
 		WORD c=0;
-		WORD count=LerFicheiro(fh, &buffer, sizeof(TDIR));
+		WORD count=LerFicheiro(fh, (BYTE *)&buffer, sizeof(TDIR));
 		if(ERRO)
 			return 0;
 		if (!count)
@@ -1664,6 +1853,7 @@ WORD ReadDir(WORD dh, TDIR_RECORD *rec)
 		}
 
 		GetNomeEntrada(buffer.Nome,rec->nome);
+		GetNomeExtensao(buffer.Nome,rec->fname,rec->fname_ext);
 		rec->Data=UnPacked_Data(buffer.Data);
 		rec->Hora=UnPacked_Hora(buffer.Hora);
 		rec->Attr=buffer.Attr;
@@ -1672,6 +1862,57 @@ WORD ReadDir(WORD dh, TDIR_RECORD *rec)
 	}
 	return 0;
 }
+
+WORD _read_dir(WORD dh, TDIR *ent)
+{
+	WORD fh;
+
+	if(dh>=DIRS)
+		return 0;
+	if(BlocoDirectories[dh].handle==DCB_ROOT) {
+		WORD cnt=0;
+		WORD entrada=BlocoDirectories[dh].rec;
+		WORD drive=BlocoDirectories[dh].drive;
+		for(entrada=BlocoDirectories[dh].rec;
+		    entrada<Drive[drive].NEntradas;
+		    entrada=++BlocoDirectories[dh].rec
+		    )
+		{
+			BYTE flag = Drive[drive].Entrada[entrada].Nome[0];
+			if(flag==0 || flag == 0xe5) {
+				continue;
+			}
+			memcpy(ent, &(Drive[drive].Entrada[entrada]), sizeof(TDIR));
+
+			BlocoDirectories[dh].rec++;
+			return 1;
+		}
+		return 0;
+	}
+
+	fh=BlocoDirectories[dh].handle;
+
+
+	while(!Fim_Ficheiro(fh))
+	{
+		WORD c=0;
+		WORD count=LerFicheiro(fh, (BYTE *)ent, sizeof(TDIR));
+		if(ERRO)
+			return 0;
+		if (!count)
+			return 0;
+
+		BlocoDirectories[dh].rec++;
+
+		if(ent->Nome[0]==0 || ent->Nome[0]==0xe5) {
+			continue;
+		}
+
+		return 1;
+	}
+	return 0;
+}
+
 
 /************UTIL***********/
 
@@ -1766,8 +2007,9 @@ void Ls(char *path)
 		out[12]=0;
 
 		printf(
-			"%-12s %5s %8lu Bytes %04u-%02u-%02u %02u:%02u %s\n",
-			out,
+			"%-8s %-3s %5s %8lu Bytes %04u-%02u-%02u %02u:%02u %s\n",
+			d.fname,
+			d.fname_ext,
 			d.Attr&0x10 ? "<DIR>": "",
 			d.Tamanho,
 			d.Data.ano, d.Data.mes, d.Data.dia,
@@ -1781,6 +2023,7 @@ void Ls(char *path)
 			numl=0;
 		}
 	}
+	CloseDir(dh);
 	printf("\nNumber of entries:   %8u\n", nfich);
 	printf("Free Disk Space:     %8lu\n", FreeSpace(drive));
 	printf("Total Disk Space:    %8lu\n", DiskSpace(drive));
