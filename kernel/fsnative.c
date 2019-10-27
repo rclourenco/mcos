@@ -1,5 +1,5 @@
-#include "FSERROR.h"
-#include "fsystem.h"
+#include "fserror.h"
+#include "fsnative.h"
 #include "mcosmem.h"
 
 FSN_DATA far *fsnDriveData(BYTE drive)

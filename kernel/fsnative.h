@@ -1,9 +1,9 @@
-#ifndef _FSYSTEM_H
-#define _FSYSTEM_H
+#ifndef _FSNATIVE_H
+#define _FSNATIVE_H
 
 
 #include "mcoslib.h"
-#include "FSERROR.h"
+#include "fserror.h"
 #include "mcosmem.h"
 #include "fsbase.h"
 

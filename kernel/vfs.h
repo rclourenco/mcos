@@ -3,7 +3,7 @@
 
 #include "mcoslib.h"
 #include "fsbase.h"
-#include "fsystem.h"
+#include "fsnative.h"
 
 void CriarFicheiro(BYTE drive,BYTE far *nome,BYTE attr);
 void Chmod(BYTE drive,BYTE far *nome,BYTE attr);

@@ -1,4 +1,4 @@
 #include "fsbase.c"
 #include "diskif.c"
-#include "fsystem.c"
+#include "fsnative.c"
 #include "vfs.c"
