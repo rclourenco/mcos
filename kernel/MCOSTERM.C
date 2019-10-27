@@ -1,5 +1,5 @@
 #include "mcoslib.h"
-#include "fsystem.h"
+#include "vfs.h"
 #include "mcosterm.h"
 
 #define TERM_KEYN 22

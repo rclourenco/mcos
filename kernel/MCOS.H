@@ -4,6 +4,7 @@
 
 #include "mcoslib.h"
 
+#define NULL ((void *)0)
 #define REGULAR 0x00
 #define DEVICE  0x80
 

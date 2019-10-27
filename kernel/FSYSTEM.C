@@ -2,18 +2,13 @@
 #include "fsystem.h"
 #include "mcosmem.h"
 
-TDRIVE Drive[MAXDRIVES];
-TFCB far * far *BlocoControlo;
-BOOTRECORD far *BootRecord;
-WORD ERRO;
-
-
-void ApagaErro()
+FSN_DATA far *fsnDriveData(BYTE drive)
 {
-	ERRO=0;
+	return (FSN_DATA far *)Drive[drive].fs_data;
 }
 
-BYTE Montada(BYTE drive)
+// move to fsbase
+BYTE fsnMontada(BYTE drive)
 {
 	if(drive>=MAXDRIVES)
 	{
@@ -23,10 +18,11 @@ BYTE Montada(BYTE drive)
 	return Drive[drive].Montada;
 }
 
-void Eliminar(BYTE drive,BYTE far *nome)
+void fsnEliminar(BYTE drive,BYTE far *nome)
 {
 	WORD entrada;
 	BYTE aberto;
+	FSN_DATA far *dd;
 	ERRO=FALSE;
 	if((Drive[drive].Montada==FALSE)||(drive>=MAXDRIVES))
 	{
@@ -38,69 +34,35 @@ void Eliminar(BYTE drive,BYTE far *nome)
 		ERRO=EINVFILE;
 		return;
 	}
+
+	dd = fsnDriveData(drive);
 	entrada=ProcurarEntrada(nome,drive);
-	if(entrada>Drive[drive].NEntradas)
+	if(entrada>dd->NEntradas)
 	{
 		ERRO=ENOFILE;
 		return;
 	}
-	if(Drive[drive].Entrada[entrada].Attr==So_leitura)
+	if(dd->Entrada[entrada].Attr==So_leitura)
 	{
 		ERRO=EACCES;
 		return;
 	}
-	aberto=VerificarAberto(&(Drive[drive].Entrada[entrada]));
+	aberto=VerificarAberto(&(dd->Entrada[entrada]));
 	if(aberto)
 	{
 		ERRO=EACCES;
 		return;
 	}
-	LibertaClusters(drive,Drive[drive].Entrada[entrada].FCluster);
-	SetNomeEntrada(Drive[drive].Entrada[entrada].Nome,"");
+	LibertaClusters(drive,dd->Entrada[entrada].FCluster);
+	SetNomeEntrada(dd->Entrada[entrada].Nome,"");
 }
 
-
-BYTE Fim_Ficheiro(WORD bloco)
-{
-	ERRO=FALSE;
-	if((FP_SEG(BlocoControlo[bloco])==0)||(bloco>=FILES))
-	{
-		ERRO=EBADF;
-		return 1;
-	}
-	if(BlocoControlo[bloco]->Fpos>=BlocoControlo[bloco]->Tamanho)
-		return 1;
-	else
-		return 0;
-}
-
-DWORD Ficheiro_Pos(WORD bloco)
-{
-	ERRO=FALSE;
-	if((FP_SEG(BlocoControlo[bloco])==0)||(bloco>=FILES))
-	{
-		ERRO=EBADF;
-		return 0L;
-	}
-	return BlocoControlo[bloco]->Fpos;
-}
-
-DWORD Ficheiro_Size(WORD bloco)
-{
-	ERRO=FALSE;
-	if((FP_SEG(BlocoControlo[bloco])==0)||(bloco>=FILES))
-	{
-		ERRO=EBADF;
-		return 0L;
-	}
-	return BlocoControlo[bloco]->Tamanho;
-}
-
-
-void Renomear(BYTE drive,BYTE far *nome,BYTE far *novo_nome)
+void fsnRenomear(BYTE drive,BYTE far *nome,BYTE far *novo_nome)
 {
 	WORD entrada,entrada2;
 	WORD len;
+	FSN_DATA far *dd;
+
 	ERRO=FALSE;
 	if((Drive[drive].Montada==FALSE)||(drive>=MAXDRIVES))
 	{
@@ -112,8 +74,10 @@ void Renomear(BYTE drive,BYTE far *nome,BYTE far *novo_nome)
 		ERRO=EINVFILE;
 		return;
 	}
+
+	dd=fsnDriveData(drive);
 	entrada=ProcurarEntrada(nome,drive);
-	if(entrada>Drive[drive].NEntradas)
+	if(entrada>dd->NEntradas)
 	{
 		ERRO=ENOFILE;
 		return;
@@ -125,22 +89,24 @@ void Renomear(BYTE drive,BYTE far *nome,BYTE far *novo_nome)
 		return;
 	}
 	entrada2=ProcurarEntrada(novo_nome,drive);
-	if((entrada2<Drive[drive].NEntradas)&&(entrada2!=entrada))
+	if((entrada2<dd->NEntradas)&&(entrada2!=entrada))
 	{
 		ERRO=EEXIST;
 		return;
 	}
-	if(Drive[drive].Entrada[entrada].Attr==So_leitura)
+	if(dd->Entrada[entrada].Attr==So_leitura)
 	{
 		ERRO=EACCES;
 		return;
 	}
-	SetNomeEntrada(Drive[drive].Entrada[entrada].Nome,novo_nome);
+	SetNomeEntrada(dd->Entrada[entrada].Nome,novo_nome);
 }
 
-void Chmod(BYTE drive,BYTE far *nome,BYTE attr)
+void fsnChmod(BYTE drive,BYTE far *nome,BYTE attr)
 {
 	WORD entrada;
+	FSN_DATA far *dd;
+
 	ERRO=FALSE;
 	if((Drive[drive].Montada==FALSE)||(drive>=MAXDRIVES))
 	{
@@ -152,18 +118,22 @@ void Chmod(BYTE drive,BYTE far *nome,BYTE attr)
 		ERRO=EINVFILE;
 		return;
 	}
+
+	dd = fsnDriveData(drive);
 	entrada=ProcurarEntrada(nome,drive);
-	if(entrada>Drive[drive].NEntradas)
+	if(entrada>dd->NEntradas)
 	{
 		ERRO=ENOFILE;
 		return;
 	}
-	Drive[drive].Entrada[entrada].Attr=attr;
+	dd->Entrada[entrada].Attr=attr;
 }
 
-BYTE GetAttr(BYTE drive,BYTE far *nome)
+BYTE fsnGetAttr(BYTE drive,BYTE far *nome)
 {
 	WORD entrada;
+	FSN_DATA far *dd;
+
 	ERRO=FALSE;
 	if((Drive[drive].Montada==FALSE)||(drive>=MAXDRIVES))
 	{
@@ -176,42 +146,50 @@ BYTE GetAttr(BYTE drive,BYTE far *nome)
 		return 0xFF;
 	}
 	entrada=ProcurarEntrada(nome,drive);
-	if(entrada>Drive[drive].NEntradas)
+
+	dd = fsnDriveData(drive);
+	if(entrada>dd->NEntradas)
 	{
 		ERRO=ENOFILE;
 		return 0xFF;
 	}
-	return Drive[drive].Entrada[entrada].Attr;
+	return dd->Entrada[entrada].Attr;
 }
 
 WORD GetEntrada(BYTE drive,BYTE first)
 {
 	WORD cont;
+	FSN_DATA far *dd;
+
 	ERRO=FALSE;
 	if((Drive[drive].Montada==FALSE)||(drive>=MAXDRIVES))
 	{
 		ERRO=EINVDRV;
 		return 0xFFFF;
 	}
+
+	dd = fsnDriveData(drive);
+
 	if(first)
-		Drive[drive]._UE=0;
-	if(Drive[drive]._UE>=Drive[drive].NEntradas)
-		Drive[drive]._UE=0;
-	for(cont=Drive[drive]._UE;cont<Drive[drive].NEntradas;cont++)
+		dd->_UE=0;
+	if(dd->_UE>=dd->NEntradas)
+		dd->_UE=0;
+	for(cont=dd->_UE;cont<dd->NEntradas;cont++)
 	{
-		if(Drive[drive].Entrada[cont].Nome[0])
+		if(dd->Entrada[cont].Nome[0])
 		{
-			Drive[drive]._UE=cont+1;
+			dd->_UE=cont+1;
 			return cont;
 		}
 	}
-	Drive[drive]._UE=cont;
+	dd->_UE=cont;
 	return 0xFFFF;
 }
 
-void CriarFicheiro(BYTE drive,BYTE far *nome,BYTE attr)
+void fsnCriarFicheiro(BYTE drive,BYTE far *nome,BYTE attr)
 {
 	WORD entrada;
+	FSN_DATA far *dd;
 	ERRO=FALSE;
 	if((Drive[drive].Montada==FALSE)||(drive>=MAXDRIVES))
 	{
@@ -224,38 +202,43 @@ void CriarFicheiro(BYTE drive,BYTE far *nome,BYTE attr)
 		return;
 	}
 	entrada=ProcurarEntrada(nome,drive);
-	if(entrada<Drive[drive].NEntradas)
+
+	dd = fsnDriveData(drive);
+	if(entrada<dd->NEntradas)
 	{
-		if(Drive[drive].Entrada[entrada].Attr&So_leitura)
+		if(dd->Entrada[entrada].Attr&So_leitura)
 		{
 			ERRO=EACCES;
 			return;
 		}
-		LibertaClusters(drive,Drive[drive].Entrada[entrada].FCluster);
+		LibertaClusters(drive,dd->Entrada[entrada].FCluster);
 	}
 	else
 	{
 		entrada=ProcurarEntrada("",drive);
-		if(entrada>=Drive[drive].NEntradas)
+		if(entrada>=dd->NEntradas)
 		{
 			ERRO=EFAULT;
 			return;
 		}
-		SetNomeEntrada(Drive[drive].Entrada[entrada].Nome,nome);
+		SetNomeEntrada(dd->Entrada[entrada].Nome,nome);
 	}
-	Drive[drive].Entrada[entrada].FCluster=0;
-	Drive[drive].Entrada[entrada].Tamanho=0;
-	Drive[drive].Entrada[entrada].Attr=attr;
-	Drive[drive].Entrada[entrada].Data=Ler_Packed_Data();
-	Drive[drive].Entrada[entrada].Hora=Ler_Packed_Hora();
+	dd->Entrada[entrada].FCluster=0;
+	dd->Entrada[entrada].Tamanho=0;
+	dd->Entrada[entrada].Attr=attr;
+	dd->Entrada[entrada].Data=Ler_Packed_Data();
+	dd->Entrada[entrada].Hora=Ler_Packed_Hora();
 }
 
 void LibertaClusters(BYTE drive,WORD cluster)
 {
 	WORD pcluster;
+	FSN_DATA far *dd;
 	if((Drive[drive].Montada==FALSE)||(drive>=MAXDRIVES))
 		return;
-	if(cluster>Drive[drive].NClusters)
+	dd = fsnDriveData(drive);
+
+	if(cluster>dd->NClusters)
 		return;
 	while((cluster>0)&&(cluster<__EOF))
 	{
@@ -265,103 +248,7 @@ void LibertaClusters(BYTE drive,WORD cluster)
 	}
 }
 
-WORD Ler_Packed_Data()
-{
-	TDATA data;
-	WORD pdata;
-	GetDate(&data);
-	pdata=(data.dia<<11);
-	pdata=(WORD)(pdata+(data.mes<<7));
-	pdata=(WORD)(pdata+(data.ano-1980));
-	return pdata;
-}
-
-TDATA UnPacked_Data(WORD pdata)
-{       TDATA data;
-	data.dia=(pdata>>11)&0x1F;
-	data.mes=(pdata>>7)&0x0F;
-	data.ano=(pdata&0x7F)+1980;
-	return data;
-}
-
-WORD Ler_Packed_Hora()
-{
-	THORA hora;
-	WORD phora;
-	GetHora(&hora);
-	phora=hora.hora<<11;
-	phora=phora+(hora.minutos<<5);
-	phora=phora+(hora.segundos>>1);
-	return phora;
-}
-
-THORA UnPacked_Hora(WORD phora)
-{
-	THORA hora;
-	hora.hora=(phora>>11)&0x1F;
-	hora.minutos=(phora>>5)&0x3F;
-	hora.segundos=(phora&0x1F)*2;
-	hora.centesimos=0;
-	return hora;
-}
-
-void far *AlocaMemoria(WORD Tamanho)
-{
-	WORD Segmento;
-	WORD blocos16bytes;
-	blocos16bytes=Tamanho/16;
-	if (Tamanho%16) blocos16bytes++;
-	if(!Aloca_Segmento(blocos16bytes,CurProcess,&Segmento))
-		Segmento=0;
-	return MK_FP(Segmento,0);
-}
-
-void LibertaMemoria(void far *ptr)
-{
-	WORD Segmento;
-	WORD Offset;
-	Segmento=FP_SEG(ptr);
-	Offset=FP_OFF(ptr);
-	if (Offset) return;
-	if (!Segmento) return;
-	Liberta_Segmento(Segmento);
-}
-
-WORD INITFS()
-{
-	BYTE contador;
-	ERRO=FALSE;
-	for (contador=0;contador<MAXDRIVES;contador++)
-			Drive[contador].Montada=FALSE;
-	BootRecord=(BOOTRECORD far *)AlocaMemoria(sizeof(BOOTRECORD));
-	if (FP_SEG(BootRecord)==0)
-	{
-		ERRO=EMEM;
-		return 0;
-	}
-	BlocoControlo=(TFCB far * far *)AlocaMemoria(sizeof(TFCB far *)*FILES);
-
-	if(FP_SEG(BlocoControlo)==0)
-	{
-		ERRO=EMEM;
-		return 0;
-	}
-	for(contador=0;contador<FILES;contador++)
-		BlocoControlo[contador]=MK_FP(0,0);
-	return 1;
-}
-
-void CLOSEFS()
-{
-	BYTE cont;
-	for(cont=0;cont<MAXDRIVES;cont++)
-		if(Drive[cont].Montada)
-			DesMontarDrive(cont);
-	LibertaMemoria(BootRecord);
-	LibertaMemoria(BlocoControlo);
-}
-
-WORD MontarDrive(BYTE drive)
+WORD fsnMontarDrive(BYTE drive)
 {
 	WORD dirsect;
 	WORD _fatsize,_dirsize;
@@ -369,6 +256,8 @@ WORD MontarDrive(BYTE drive)
 	BYTE far *endereco;
 	WORD sector;
 	WORD cont;
+	FSN_DATA far *dd;
+
 	ERRO=FALSE;
 	if(!(drive<MAXDRIVES))
 	{
@@ -389,68 +278,91 @@ WORD MontarDrive(BYTE drive)
 	if((bootid[0]!='M')||(bootid[1]!='C')||(bootid[2]!='F')||
 		(bootid[3]!='S')||(bootid[4]!='0')||(bootid[5]!='0'))
 	{
+		// NEW ERROR INVALID FS
 		ERRO=EINVDRV;
 		return 0;
 	}
-	Drive[drive].TamSector=BootRecord->Bps;
-	Drive[drive].SectorCluster=BootRecord->Spc;
-	Drive[drive].SectorPista=BootRecord->Spp;
-	Drive[drive].Heads=BootRecord->Hn;
-	Drive[drive].FATSector=BootRecord->Rs+BootRecord->Ssn;
-	Drive[drive].DirSector=Drive[drive].FATSector+BootRecord->Spf;
-	dirsect=((BootRecord->Rde)*32)/Drive[drive].TamSector;
-	if(((BootRecord->Rde)*32)%Drive[drive].TamSector) dirsect++;
-	Drive[drive].DadosSector=Drive[drive].DirSector+dirsect;
-	Drive[drive].NEntradas=BootRecord->Rde;
-	Drive[drive].NClusters=(BootRecord->Lsn-Drive[drive].DadosSector)/Drive[drive].SectorCluster;
-	Drive[drive].NSectors=BootRecord->Lsn;
-	_fatsize=(BootRecord->Spf)*Drive[drive].TamSector;
-	_dirsize=dirsect*Drive[drive].TamSector;
-	Drive[drive].FAT=(WORD far *)AlocaMemoria(_fatsize);
-	Drive[drive].Entrada=(TDIR far *)AlocaMemoria(_dirsize);
-	Drive[drive]._UCA=0;
-	Drive[drive]._UE=0;
-	Drive[drive].Montada=TRUE;
-	if((!FP_SEG(Drive[drive].FAT))||(!FP_SEG(Drive[drive].Entrada)))
-	{
+	Drive[drive].ifsdriver = fsnGetDriver();
+	Drive[drive].fs_data = (FSN_DATA far *)AlocaMemoria(sizeof(FSN_DATA));
+	
+	dd = fsnDriveData(drive);
+	if (!FP_SEG(dd)) {
 		ERRO=EMEM;
 		return 0;
 	}
-	endereco=(BYTE far *)Drive[drive].FAT;
-	sector=Drive[drive].FATSector;
+
+	Drive[drive].TamSector=BootRecord->Bps;
+	Drive[drive].SectorPista=BootRecord->Spp;
+	Drive[drive].Heads=BootRecord->Hn;
+	Drive[drive].NSectors=BootRecord->Lsn;
+
+	dd->SectorCluster=BootRecord->Spc;
+	dirsect=((BootRecord->Rde)*32)/Drive[drive].TamSector;
+	if(((BootRecord->Rde)*32)%Drive[drive].TamSector) dirsect++;
+
+	dd->FATSector=BootRecord->Rs+BootRecord->Ssn;
+	dd->DirSector=dd->FATSector+BootRecord->Spf;
+
+	dd->DadosSector=dd->DirSector+dirsect;
+	dd->NEntradas=BootRecord->Rde;
+	dd->NClusters=(BootRecord->Lsn-dd->DadosSector)/dd->SectorCluster;
+	_fatsize=(BootRecord->Spf)*Drive[drive].TamSector;
+	_dirsize=dirsect*Drive[drive].TamSector;
+
+	dd->FAT=(WORD far *)AlocaMemoria(_fatsize);
+	dd->Entrada=(TDIR far *)AlocaMemoria(_dirsize);
+	dd->_UCA=0;
+	dd->_UE=0;
+	if((!FP_SEG(dd->FAT))||(!FP_SEG(dd->Entrada)))
+	{
+		ERRO=EMEM;
+		goto _abort_mount;
+	}
+
+	Drive[drive].Montada=TRUE; // needed for LerSector
+
+	endereco=(BYTE far *)dd->FAT;
+	sector=dd->FATSector;
 	for(cont=0;cont<_fatsize;cont++)
 	{
 		if(!(LerSector(drive,sector,endereco)))
 		{
-			Drive[drive].Montada=FALSE;
 			ERRO=EINOUT;
-			return 0;
+			goto _abort_mount;
 		}
 		sector++;
 		cont+=Drive[drive].TamSector;
 		endereco+=Drive[drive].TamSector;
 	}
-	endereco=(BYTE far *)Drive[drive].Entrada;
-	sector=Drive[drive].DirSector;
+	endereco=(BYTE far *)dd->Entrada;
+	sector=dd->DirSector;
 	for(cont=0;cont<_dirsize;cont++)
 	{
 		if(!(LerSector(drive,sector,endereco)))
 		{
-			Drive[drive].Montada=FALSE;
 			ERRO=EINOUT;
-			return 0;
+			goto _abort_mount;
 		}
 		sector++;
 		cont+=Drive[drive].TamSector;
 		endereco+=Drive[drive].TamSector;
 	}
-	Drive[drive]._fatsize=_fatsize;
-	Drive[drive]._dirsize=_dirsize;
+	dd->_fatsize=_fatsize;
+	dd->_dirsize=_dirsize;
+
+
 	return 1;
+_abort_mount:
+	Drive[drive].Montada=FALSE;
+	LibertaMemoria(dd->FAT);
+	LibertaMemoria(dd->Entrada);
+	return 0;
 }
 
-WORD DesMontarDrive(BYTE drive)
+WORD fsnDesMontarDrive(BYTE drive)
 {
+	FSN_DATA far *dd;
+
 	if(!(drive<MAXDRIVES))
 	{
 		ERRO=EINVDRV;
@@ -461,66 +373,59 @@ WORD DesMontarDrive(BYTE drive)
 		ERRO=EINVDRV;
 		return 0;
 	}
-	FecharFicheirosDrive(drive);
+	
 	SyncDrive(drive);
 	Drive[drive].Montada=FALSE;
-	LibertaMemoria(Drive[drive].FAT);
-	LibertaMemoria(Drive[drive].Entrada);
+
+	dd = fsnDriveData(drive);
+	
+	LibertaMemoria(dd->FAT);
+	LibertaMemoria(dd->Entrada);
+	LibertaMemoria(dd);
+
 	return 0;
 }
 
-BYTE LerSector(BYTE drive,WORD sector,void far *buffer)
-{
-	int head,track,sect;
-	if((Drive[drive].Montada==FALSE)||(drive>=MAXDRIVES))
-		return 0;
-	if(sector>=Drive[drive].NSectors) return 0;
-	sect=sector%Drive[drive].SectorPista+1;
-	head=(sector/Drive[drive].SectorPista)%Drive[drive].Heads;
-	track=(sector/Drive[drive].SectorPista)/Drive[drive].Heads;
-	return (LerSectorFisico(drive,head,track,sect,buffer));
-}
 
-BYTE EscreverSector(BYTE drive,WORD sector,void far *buffer)
-{
-	int head,track,sect;
-	if((Drive[drive].Montada==FALSE)||(drive>=MAXDRIVES))
-		return 0;
-	if(sector>=Drive[drive].NSectors) return 0;
-	sect=sector%Drive[drive].SectorPista+1;
-	head=(sector/Drive[drive].SectorPista)%Drive[drive].Heads;
-	track=(sector/Drive[drive].SectorPista)/Drive[drive].Heads;
-	return (EscreverSectorFisico(drive,head,track,sect,buffer));
-}
 
 WORD GetFat(BYTE drive,WORD ParentCluster)
 {
 	WORD index;
+	FSN_DATA far *dd;
+
 	if((Drive[drive].Montada==FALSE)||(drive>=MAXDRIVES))
 		return 0xFFFF;
-	if((ParentCluster<1)||(ParentCluster>Drive[drive].NClusters))
+
+	dd = fsnDriveData(drive);
+
+	if((ParentCluster<1)||(ParentCluster>dd->NClusters))
 	{
 		return 0xFFFF;
 	}
 	index=ParentCluster-1;
-	return Drive[drive].FAT[index];
+	return dd->FAT[index];
 }
 
 void SetFat(BYTE drive,WORD ParentCluster,WORD Cluster)
 {
 	WORD index;
+	FSN_DATA far *dd;
+
 	if((Drive[drive].Montada==FALSE)||(drive>=MAXDRIVES))
 	{
 		ERRO=EINVDRV;
 		return ;
 	}
-	if((ParentCluster<1)||(ParentCluster>Drive[drive].NClusters))
+
+	dd = fsnDriveData(drive);
+
+	if((ParentCluster<1)||(ParentCluster>dd->NClusters))
 	{
 		ERRO=EFAULT;
 		return ;
 	}
 	index=ParentCluster-1;
-	Drive[drive].FAT[index]=Cluster;
+	dd->FAT[index]=Cluster;
 }
 
 WORD SyncDrive(BYTE drive)
@@ -528,6 +433,8 @@ WORD SyncDrive(BYTE drive)
 	BYTE far *endereco;
 	WORD sector;
 	WORD cont;
+	FSN_DATA far *dd;
+
 	ERRO=FALSE;
 	if(!(drive<MAXDRIVES))
 	{
@@ -539,9 +446,12 @@ WORD SyncDrive(BYTE drive)
 		ERRO=EINVDRV;
 		return 0;
 	}
-	endereco=(BYTE far *)Drive[drive].FAT;
-	sector=Drive[drive].FATSector;
-	for(cont=0;cont<Drive[drive]._fatsize;cont++)
+
+	dd = fsnDriveData(drive);
+
+	endereco=(BYTE far *)dd->FAT;
+	sector=dd->FATSector;
+	for(cont=0;cont<dd->_fatsize;cont++)
 	{
 		if(!(EscreverSector(drive,sector,endereco)))
 		{
@@ -552,9 +462,9 @@ WORD SyncDrive(BYTE drive)
 		cont+=Drive[drive].TamSector;
 		endereco+=Drive[drive].TamSector;
 	}
-	endereco=(BYTE far *)Drive[drive].Entrada;
-	sector=Drive[drive].DirSector;
-	for(cont=0;cont<Drive[drive]._dirsize;cont++)
+	endereco=(BYTE far *)dd->Entrada;
+	sector=dd->DirSector;
+	for(cont=0;cont<dd->_dirsize;cont++)
 	{
 		if(!(EscreverSector(drive,sector,endereco)))
 		{
@@ -571,28 +481,33 @@ WORD SyncDrive(BYTE drive)
 WORD AlocaCluster(BYTE drive)
 {
 	WORD cont;
+	FSN_DATA far *dd;
+
 	if((Drive[drive].Montada==FALSE)||(drive>=MAXDRIVES))
 	{
 		ERRO=EINVDRV;
 		return 0;
 	}
-	if(Drive[drive]._UCA>=Drive[drive].NClusters)
-		Drive[drive]._UCA=0;
-	for(cont=Drive[drive]._UCA+1;cont<=Drive[drive].NClusters;cont++)
+
+	dd = fsnDriveData(drive);
+
+	if(dd->_UCA>=dd->NClusters)
+		dd->_UCA=0;
+	for(cont=dd->_UCA+1;cont<=dd->NClusters;cont++)
 	{
 		if (GetFat(drive,cont)==0)
 		{
 			SetFat(drive,cont,__EOF);
-			Drive[drive]._UCA=cont;
+			dd->_UCA=cont;
 			return cont;
 		}
 	}
-	for(cont=1;cont<=Drive[drive]._UCA;cont++)
+	for(cont=1;cont<=dd->_UCA;cont++)
 	{
 		if (GetFat(drive,cont)==0)
 		{
 			SetFat(drive,cont,__EOF);
-			Drive[drive]._UCA=cont;
+			dd->_UCA=cont;
 			return cont;
 		}
 	}
@@ -602,14 +517,19 @@ WORD AlocaCluster(BYTE drive)
 WORD ProcurarEntrada(BYTE far *nome,BYTE drive)
 {
 	WORD cont;
+	FSN_DATA far *dd;
+
 	if((Drive[drive].Montada==FALSE)||(drive>=MAXDRIVES))
 	{
 		ERRO=EINVDRV;
 		return 0xFFFF;
 	}
-	for(cont=0;cont<Drive[drive].NEntradas;cont++)
+
+	dd = fsnDriveData(drive);
+
+	for(cont=0;cont<dd->NEntradas;cont++)
 	{
-		if(NomeFicheiroCmp(Drive[drive].Entrada[cont].Nome,nome))
+		if(NomeFicheiroCmp(dd->Entrada[cont].Nome,nome))
 			return cont;
 	}
 	return 0xFFFF;
@@ -650,18 +570,7 @@ void GetNomeEntrada(BYTE far *fnome,BYTE far *nome)
 	nome[cont]=0;
 }
 
-WORD GetFreeBloco()
-{
-	WORD cont;
-	for(cont=0;cont<FILES;cont++)
-	{
-		if(FP_SEG(BlocoControlo[cont])==0)
-			return cont;
-	}
-	return 0xFFFF;
-}
-
-WORD AbrirFicheiro(BYTE drive,BYTE far *nome,BYTE modo)
+WORD fsnAbrirFicheiro(BYTE drive,BYTE far *nome,BYTE modo)
 {
 	WORD entrada;
 	WORD bloco;
@@ -669,6 +578,9 @@ WORD AbrirFicheiro(BYTE drive,BYTE far *nome,BYTE modo)
 	BYTE far *enderecobuffer;
 	WORD buffersize;
 	BYTE aberto=FALSE;
+	FSN_DATA far *dd;
+	TDIR far *b_ent;
+
 	ERRO=FALSE;
 	if(Strlen(nome)==0)
 	{
@@ -680,9 +592,12 @@ WORD AbrirFicheiro(BYTE drive,BYTE far *nome,BYTE modo)
 		ERRO=EINVDRV;
 		return 0xFFFF;
 	}
+
+	dd = fsnDriveData(drive);
+
 	entrada=ProcurarEntrada(nome,drive);
-	if(entrada<Drive[drive].NEntradas)
-		aberto=VerificarAberto(&(Drive[drive].Entrada[entrada]));
+	if(entrada<dd->NEntradas)
+		aberto=VerificarAberto(&(dd->Entrada[entrada]));
 	if(((modo&CRIAR_F)||(modo&ESCREVER))&&(aberto))
 	{
 		ERRO=EACCES;
@@ -690,17 +605,17 @@ WORD AbrirFicheiro(BYTE drive,BYTE far *nome,BYTE modo)
 	}
 	if(modo&CRIAR_F)
 	{
-		CriarFicheiro(drive,nome,Sem_atributos);
+		fsnCriarFicheiro(drive,nome,Sem_atributos);
 		if(ERRO)
 			return 0xFFFF;
 	}
 	entrada=ProcurarEntrada(nome,drive);
-	if(entrada>=Drive[drive].NEntradas)
+	if(entrada>=dd->NEntradas)
 	{
 		ERRO=ENOFILE;
 		return 0xFFFF;
 	}
-	if((modo&ESCREVER)&&(Drive[drive].Entrada[entrada].Attr&So_leitura))
+	if((modo&ESCREVER)&&(dd->Entrada[entrada].Attr&So_leitura))
 	{
 		ERRO=EACCES;
 		return 0xFFFF;
@@ -717,7 +632,7 @@ WORD AbrirFicheiro(BYTE drive,BYTE far *nome,BYTE modo)
 		ERRO=EMEM;
 		return 0xFFFF;
 	}
-	buffersize=Drive[drive].TamSector*Drive[drive].SectorCluster;
+	buffersize=Drive[drive].TamSector*dd->SectorCluster;
 	enderecobuffer=(BYTE far *)AlocaMemoria(buffersize);
 	if(FP_SEG(enderecobuffer)==0)
 	{
@@ -725,17 +640,33 @@ WORD AbrirFicheiro(BYTE drive,BYTE far *nome,BYTE modo)
 		ERRO=EMEM;
 		return 0xFFFF;
 	}
+
+	b_ent = &(dd->Entrada[entrada]);
+
 	BlocoControlo[bloco]=enderecobloco;
-	BlocoControlo[bloco]->Entrada=&(Drive[drive].Entrada[entrada]);
-	BlocoControlo[bloco]->Tamanho=BlocoControlo[bloco]->Entrada->Tamanho;
+	BlocoControlo[bloco]->Inode = entrada+1;
+	BlocoControlo[bloco]->Tamanho=b_ent->Tamanho;
 	BlocoControlo[bloco]->Modo=modo;
 	BlocoControlo[bloco]->Fpos=0;
 	BlocoControlo[bloco]->Drive=drive;
 	BlocoControlo[bloco]->Buffer=enderecobuffer;
-	BlocoControlo[bloco]->FCluster=BlocoControlo[bloco]->Entrada->FCluster;
+	BlocoControlo[bloco]->FCluster=b_ent->FCluster;
 	BlocoControlo[bloco]->Cluster=0;
 	BlocoControlo[bloco]->Procid=CurProcess;
 	return bloco;
+}
+
+TDIR far *fsnBlocoEntrada(TFCB far *fcb) {
+	BYTE drive;
+	FSN_DATA far *dd;
+
+	if (!FP_SEG(fcb))
+		return MK_FP(0,0);
+
+	dd=fsnDriveData(fcb->Drive);
+	if (fcb->Inode>0L)
+		return &dd->Entrada[fcb->Inode-1];
+	return MK_FP(0,0);	
 }
 
 BYTE VerificarAberto(TDIR far *entrada)
@@ -745,14 +676,15 @@ BYTE VerificarAberto(TDIR far *entrada)
 	{
 		if(FP_SEG(BlocoControlo[cont]))
 		{
-			if(BlocoControlo[cont]->Entrada==entrada)
+			TDIR far *b_ent = fsnBlocoEntrada(BlocoControlo[cont]);
+			if(FP_SEG(b_ent) && b_ent==entrada)
 				 return TRUE;
 		}
 	}
 	return FALSE;
 }
 
-void FecharFicheiro(WORD bloco)
+void fsnFecharFicheiro(WORD bloco)
 {
 	ERRO=FALSE;
 	if((FP_SEG(BlocoControlo[bloco])==0)||(bloco>=FILES))
@@ -762,33 +694,40 @@ void FecharFicheiro(WORD bloco)
 	}
 	if(BlocoControlo[bloco]->Modo&ESCREVER)
 	{
-		FlushFicheiro(bloco);
-		BlocoControlo[bloco]->Entrada->Tamanho=BlocoControlo[bloco]->Tamanho;
-		BlocoControlo[bloco]->Entrada->FCluster=BlocoControlo[bloco]->FCluster;
-		BlocoControlo[bloco]->Entrada->Data=Ler_Packed_Data();
-		BlocoControlo[bloco]->Entrada->Hora=Ler_Packed_Hora();
+		TDIR far *b_ent;
+		fsnFlushFicheiro(bloco);
+
+		b_ent = fsnBlocoEntrada(BlocoControlo[bloco]);
+
+		b_ent->Tamanho=BlocoControlo[bloco]->Tamanho;
+		b_ent->FCluster=BlocoControlo[bloco]->FCluster;
+		b_ent->Data=Ler_Packed_Data();
+		b_ent->Hora=Ler_Packed_Hora();
 	}
 	LibertaMemoria(BlocoControlo[bloco]->Buffer);
 	LibertaMemoria(BlocoControlo[bloco]);
 	BlocoControlo[bloco]=(TFCB far *)MK_FP(0,0);
 }
 
-void FlushFicheiro(WORD bloco)
+void fsnFlushFicheiro(WORD bloco)
 {
 	WORD deslocamento;
 	WORD tamcluster;
 	BYTE drive;
+	FSN_DATA far *dd;
+
 	if((FP_SEG(BlocoControlo[bloco])==0)||(bloco>=FILES))
 	{
 		ERRO=EBADF;
 		return;
 	}
 	drive=BlocoControlo[bloco]->Drive;
-	tamcluster=Drive[drive].TamSector*Drive[drive].SectorCluster;
+	dd=fsnDriveData(drive);
+	tamcluster=Drive[drive].TamSector*dd->SectorCluster;
 	deslocamento=BlocoControlo[bloco]->Fpos%tamcluster;
 	if(deslocamento)
 	{
-		EscreverCluster(drive,BlocoControlo[bloco]->Cluster,BlocoControlo[bloco]->Buffer);
+		fsnEscreverCluster(drive,BlocoControlo[bloco]->Cluster,BlocoControlo[bloco]->Buffer);
 		if(ERRO)
 		{
 			return;
@@ -796,37 +735,14 @@ void FlushFicheiro(WORD bloco)
 	}
 }
 
-void FecharFicheirosDrive(BYTE drive)
-{
-	WORD cont;
-	if((Drive[drive].Montada==FALSE)||(drive>=MAXDRIVES))
-	{
-		ERRO=EINVDRV;
-		return;
-	}
-	for(cont=0;cont<FILES;cont++)
-	{
-		if(BlocoControlo[cont]->Drive==drive)
-			FecharFicheiro(cont);
-	}
-}
-
-void FecharFicheirosProcesso(WORD procid)
-{
-	WORD cont;
-	for(cont=0;cont<FILES;cont++)
-	{
-		if(BlocoControlo[cont]->Procid==procid)
-			FecharFicheiro(cont);
-	}
-}
-
-WORD EscreverCaracter(WORD bloco,BYTE caracter)
+WORD fsnEscreverCaracter(WORD bloco,BYTE caracter)
 {
 	WORD deslocamento;
 	WORD tamcluster;
 	WORD cluster_anterior;
 	BYTE drive;
+	FSN_DATA far *dd;
+
 	ERRO=FALSE;
 	if((FP_SEG(BlocoControlo[bloco])==0)||(bloco>=FILES))
 	{
@@ -846,7 +762,8 @@ WORD EscreverCaracter(WORD bloco,BYTE caracter)
 		}
 	}
 	drive=BlocoControlo[bloco]->Drive;
-	tamcluster=Drive[drive].TamSector*Drive[drive].SectorCluster;
+	dd=fsnDriveData(drive);
+	tamcluster=Drive[drive].TamSector*dd->SectorCluster;
 	deslocamento=BlocoControlo[bloco]->Fpos%tamcluster;
 	if(deslocamento==0)
 	{
@@ -875,7 +792,7 @@ WORD EscreverCaracter(WORD bloco,BYTE caracter)
 			}
 			else
 			{
-				LerCluster(drive,BlocoControlo[bloco]->Cluster,BlocoControlo[bloco]->Buffer);
+				fsnLerCluster(drive,BlocoControlo[bloco]->Cluster,BlocoControlo[bloco]->Buffer);
 				if(ERRO)
 				{
 					BlocoControlo[bloco]->Cluster=cluster_anterior;
@@ -894,7 +811,7 @@ WORD EscreverCaracter(WORD bloco,BYTE caracter)
 	deslocamento=BlocoControlo[bloco]->Fpos%tamcluster;
 	if(deslocamento==0)
 	{
-		EscreverCluster(drive,BlocoControlo[bloco]->Cluster,BlocoControlo[bloco]->Buffer);
+		fsnEscreverCluster(drive,BlocoControlo[bloco]->Cluster,BlocoControlo[bloco]->Buffer);
 		if(ERRO)
 		{
 			BlocoControlo[bloco]->Fpos--;
@@ -908,7 +825,7 @@ WORD EscreverCaracter(WORD bloco,BYTE caracter)
 }
 
 
-WORD EscreverFicheiro(WORD bloco, char far *ptr, WORD len)
+WORD fsnEscreverFicheiro(WORD bloco, char far *ptr, WORD len)
 {
 	WORD deslocamento;
 	WORD tamcluster;
@@ -916,6 +833,8 @@ WORD EscreverFicheiro(WORD bloco, char far *ptr, WORD len)
 	BYTE drive;
 	WORD count=0;
 	WORD ksize=0;
+	FSN_DATA far *dd;
+
 	ERRO=FALSE;
 	if((BlocoControlo[bloco]==NULL)||(bloco>=FILES))
 	{
@@ -936,7 +855,8 @@ WORD EscreverFicheiro(WORD bloco, char far *ptr, WORD len)
 		}
 	}
 	drive=BlocoControlo[bloco]->Drive;
-	tamcluster=Drive[drive].TamSector*Drive[drive].SectorCluster;
+	dd=fsnDriveData(drive);
+	tamcluster=Drive[drive].TamSector*dd->SectorCluster;
 	while(len) {
 	  deslocamento=BlocoControlo[bloco]->Fpos%tamcluster;
 	  if(deslocamento==0)
@@ -966,7 +886,7 @@ WORD EscreverFicheiro(WORD bloco, char far *ptr, WORD len)
 			  }
 			  else
 			  {
-				  LerCluster(drive,BlocoControlo[bloco]->Cluster,BlocoControlo[bloco]->Buffer);
+				  fsnLerCluster(drive,BlocoControlo[bloco]->Cluster,BlocoControlo[bloco]->Buffer);
 				  if(ERRO)
 				  {
 					  BlocoControlo[bloco]->Cluster=cluster_anterior;
@@ -997,7 +917,7 @@ WORD EscreverFicheiro(WORD bloco, char far *ptr, WORD len)
 	  deslocamento=BlocoControlo[bloco]->Fpos%tamcluster;
 	  if(deslocamento==0)
 	  {
-		  EscreverCluster(drive,BlocoControlo[bloco]->Cluster,BlocoControlo[bloco]->Buffer);
+		  fsnEscreverCluster(drive,BlocoControlo[bloco]->Cluster,BlocoControlo[bloco]->Buffer);
 		  if(ERRO)
 		  {
 			  BlocoControlo[bloco]->Fpos-=ksize;
@@ -1012,23 +932,26 @@ WORD EscreverFicheiro(WORD bloco, char far *ptr, WORD len)
 
 }
 
-void EscreverCluster(BYTE drive,WORD cluster,BYTE far *buffer)
+void fsnEscreverCluster(BYTE drive,WORD cluster,BYTE far *buffer)
 {
 	WORD cont;
 	WORD sector;
+	FSN_DATA far *dd;
+
 	ERRO=FALSE;
 	if((Drive[drive].Montada==FALSE)||(drive>=MAXDRIVES))
 	{
 		ERRO=EINVDRV;
 		return;
 	}
-	if((cluster<1)||(cluster>Drive[drive].NClusters))
+	dd = fsnDriveData(drive);
+	if((cluster<1)||(cluster>dd->NClusters))
 	{
 		ERRO=EFAULT;
 		return;
 	}
-	sector=Drive[drive].DadosSector+(cluster-1)*Drive[drive].SectorCluster;
-	for(cont=0;cont<Drive[drive].SectorCluster;cont++)
+	sector=dd->DadosSector+(cluster-1)*dd->SectorCluster;
+	for(cont=0;cont<dd->SectorCluster;cont++)
 	{
 	  if(!(EscreverSector(drive,sector,buffer)))
 		{
@@ -1040,23 +963,29 @@ void EscreverCluster(BYTE drive,WORD cluster,BYTE far *buffer)
 	}
 }
 
-void LerCluster(BYTE drive,WORD cluster,BYTE far *buffer)
+void fsnLerCluster(BYTE drive,WORD cluster,BYTE far *buffer)
 {
 	WORD cont;
 	WORD sector;
+	FSN_DATA far *dd;
+
 	ERRO=FALSE;
+
 	if((Drive[drive].Montada==FALSE)||(drive>=MAXDRIVES))
 	{
 		ERRO=EINVDRV;
 		return;
 	}
-	if((cluster<1)||(cluster>Drive[drive].NClusters))
+
+	dd = fsnDriveData(drive);
+
+	if((cluster<1)||(cluster>dd->NClusters))
 	{
 		ERRO=EFAULT;
 		return;
 	}
-	sector=Drive[drive].DadosSector+(cluster-1)*Drive[drive].SectorCluster;
-	for(cont=0;cont<Drive[drive].SectorCluster;cont++)
+	sector=dd->DadosSector+(cluster-1)*dd->SectorCluster;
+	for(cont=0;cont<dd->SectorCluster;cont++)
 	{
 	  if(!(LerSector(drive,sector,buffer)))
 		{
@@ -1068,13 +997,15 @@ void LerCluster(BYTE drive,WORD cluster,BYTE far *buffer)
 	}
 }
 
-WORD LerCaracter(WORD bloco)
+WORD fsnLerCaracter(WORD bloco)
 {
 	WORD deslocamento;
 	WORD cluster_anterior;
 	WORD tamcluster;
 	BYTE caracter;
 	BYTE drive;
+	FSN_DATA far *dd;
+
 	ERRO=FALSE;
 	if((FP_SEG(BlocoControlo[bloco])==0)||(bloco>=FILES))
 	{
@@ -1086,7 +1017,9 @@ WORD LerCaracter(WORD bloco)
 		return __EOF;
 	}
 	drive=BlocoControlo[bloco]->Drive;
-	tamcluster=Drive[drive].TamSector*Drive[drive].SectorCluster;
+	dd=fsnDriveData(drive);
+
+	tamcluster=Drive[drive].TamSector*dd->SectorCluster;
 	deslocamento=BlocoControlo[bloco]->Fpos%tamcluster;
 	if(deslocamento==0)
 	{
@@ -1101,7 +1034,7 @@ WORD LerCaracter(WORD bloco)
 			ERRO=EFAULT;
 			return 0xFFFF;
 		}
-		LerCluster(drive,BlocoControlo[bloco]->Cluster,BlocoControlo[bloco]->Buffer);
+		fsnLerCluster(drive,BlocoControlo[bloco]->Cluster,BlocoControlo[bloco]->Buffer);
 		if(ERRO)
 		{
 			BlocoControlo[bloco]->Cluster=cluster_anterior;
@@ -1115,7 +1048,7 @@ WORD LerCaracter(WORD bloco)
 }
 
 
-WORD LerFicheiro(WORD bloco, char far *ptr, WORD len)
+WORD fsnLerFicheiro(WORD bloco, char far *ptr, WORD len)
 {
 	WORD deslocamento;
 	WORD cluster_anterior;
@@ -1124,6 +1057,8 @@ WORD LerFicheiro(WORD bloco, char far *ptr, WORD len)
 	BYTE drive;
 	WORD count=0;
 	WORD ksize=0;
+	FSN_DATA far *dd;
+
 	ERRO=FALSE;
 	if((FP_SEG(BlocoControlo[bloco])==0)||(bloco>=FILES))
 	{
@@ -1135,7 +1070,8 @@ WORD LerFicheiro(WORD bloco, char far *ptr, WORD len)
 		return 0;
 	}
 	drive=BlocoControlo[bloco]->Drive;
-	tamcluster=Drive[drive].TamSector*Drive[drive].SectorCluster;
+	dd=fsnDriveData(drive);
+	tamcluster=Drive[drive].TamSector*dd->SectorCluster;
 	while(len) {
 	  deslocamento=BlocoControlo[bloco]->Fpos%tamcluster;
 	  if(deslocamento==0)
@@ -1151,7 +1087,7 @@ WORD LerFicheiro(WORD bloco, char far *ptr, WORD len)
 			  ERRO=EFAULT;
 			  return 0;
 		  }
-		  LerCluster(drive,BlocoControlo[bloco]->Cluster,BlocoControlo[bloco]->Buffer);
+		  fsnLerCluster(drive,BlocoControlo[bloco]->Cluster,BlocoControlo[bloco]->Buffer);
 		  if(ERRO)
 		  {
 			  BlocoControlo[bloco]->Cluster=cluster_anterior;
@@ -1182,7 +1118,7 @@ WORD LerFicheiro(WORD bloco, char far *ptr, WORD len)
 }
 
 
-void PosicionarFicheiro(WORD bloco,long deslocamento,BYTE modo)
+void fsnPosicionarFicheiro(WORD bloco,long deslocamento,BYTE modo)
 {
 	DWORD n_pos;
 	WORD n_cluster;
@@ -1190,6 +1126,8 @@ void PosicionarFicheiro(WORD bloco,long deslocamento,BYTE modo)
 	WORD cont;
 	BYTE drive;
 	WORD tamcluster;
+	FSN_DATA far *dd;
+
 	ERRO=FALSE;
 	if((FP_SEG(BlocoControlo[bloco])==0)||(bloco>=FILES))
 	{
@@ -1220,10 +1158,11 @@ void PosicionarFicheiro(WORD bloco,long deslocamento,BYTE modo)
 		return;
 	}
 	drive=BlocoControlo[bloco]->Drive;
-	tamcluster=Drive[drive].TamSector*Drive[drive].SectorCluster;
+	dd=fsnDriveData(drive);
+	tamcluster=Drive[drive].TamSector*dd->SectorCluster;
 	nciclos=(n_pos-1)/tamcluster;
 	n_cluster=BlocoControlo[bloco]->FCluster;
-	if(n_cluster>Drive[drive].NClusters)
+	if(n_cluster>dd->NClusters)
 	{
 		ERRO=EFAULT;
 		return;
@@ -1231,7 +1170,7 @@ void PosicionarFicheiro(WORD bloco,long deslocamento,BYTE modo)
 	for(cont=0;cont<nciclos;cont++)
 	{
 		n_cluster=GetFat(drive,n_cluster);
-		if((n_cluster<1)||(n_cluster>Drive[drive].NClusters))
+		if((n_cluster<1)||(n_cluster>dd->NClusters))
 		{
 			ERRO=EFAULT;
 			return;
@@ -1239,7 +1178,7 @@ void PosicionarFicheiro(WORD bloco,long deslocamento,BYTE modo)
 	}
 	if(n_pos%tamcluster)
 	{
-		LerCluster(drive,n_cluster,BlocoControlo[bloco]->Buffer);
+		fsnLerCluster(drive,n_cluster,BlocoControlo[bloco]->Buffer);
 		if(ERRO)
 			return;
 	}
@@ -1247,7 +1186,7 @@ void PosicionarFicheiro(WORD bloco,long deslocamento,BYTE modo)
 	BlocoControlo[bloco]->Fpos=n_pos;
 }
 
-void TruncarFicheiro(WORD bloco)
+void fsnTruncarFicheiro(WORD bloco)
 {
 	BYTE drive;
 	ERRO=FALSE;
@@ -1275,15 +1214,20 @@ void TruncarFicheiro(WORD bloco)
 	}
 }
 
-WORD FreeClusters(BYTE drive)
+WORD fsnFreeClusters(BYTE drive)
 {
 	WORD cont;
 	WORD free=0;
+	FSN_DATA far *dd;
+
 	if(drive>=MAXDRIVES)
 		return 0;
 	if(Drive[drive].Montada==FALSE)
 		return 0;
-	for(cont=1;cont<=Drive[drive].NClusters;cont++)
+
+	dd = fsnDriveData(drive);
+
+	for(cont=1;cont<=dd->NClusters;cont++)
 	{
 		if(GetFat(drive,cont)==0)
 			free++;
@@ -1291,112 +1235,59 @@ WORD FreeClusters(BYTE drive)
 	return free;
 }
 
-DWORD FreeSpace(BYTE drive)
+DWORD fsnFreeSpace(BYTE drive)
 {
 	DWORD frees;
 	WORD tamcluster;
+	FSN_DATA far *dd;
+
 	if(drive>=MAXDRIVES)
 		return 0;
 	if(Drive[drive].Montada==FALSE)
 		return 0;
-	tamcluster=Drive[drive].TamSector*Drive[drive].SectorCluster;
-	frees=longmul2((DWORD)FreeClusters(drive),tamcluster);
+	dd=fsnDriveData(drive);
+	tamcluster=Drive[drive].TamSector*dd->SectorCluster;
+	frees=longmul2((DWORD)fsnFreeClusters(drive),tamcluster);
 	return frees;
 }
 
-DWORD DiskSpace(BYTE drive)
+DWORD fsnDiskSpace(BYTE drive)
 {
 	WORD tamcluster;
+	FSN_DATA far *dd;
+
 	if(drive>=MAXDRIVES)
 		return 0;
 	if(Drive[drive].Montada==FALSE)
 		return 0;
-	tamcluster=Drive[drive].TamSector*Drive[drive].SectorCluster;
-	return longmul2(Drive[drive].NClusters,tamcluster);
-}
 
-BYTE LerSectorFisico(char drive,char head,char track,char sector,char far *buffer)
-{
-	WORD entries=0;
-	BYTE OK=0;
-	int segb=FP_SEG(buffer),ofsb=FP_OFF(buffer);
-	char r;
-	if(drive>=MAXDRIVES)
-		return 0;
+	dd = fsnDriveData(drive);
 
-	while((entries<NENTRIES)&&(!OK))
-	{
-		asm{
-			mov ah,0x2;
-			mov al,0x1;
-			mov ch,track;
-			mov cl,sector;
-			mov dh,head;
-			mov dl,drive;
-			mov es,segb;
-			mov bx,ofsb;
-			int 0x13;
-			mov r,0;
-			jnc done;
-			mov r,1;
-			}
-		done:
-		if(!r)
-			OK=1;
-		entries++;
-	}
-	return OK;
-}
-
-BYTE EscreverSectorFisico(char drive,char head,char track,char sector,char far *buffer)
-{
-	WORD entries=0;
-	int segb=FP_SEG(buffer),ofsb=FP_OFF(buffer);
-	char r;
-	BYTE OK=0;
-	if(drive>=MAXDRIVES)
-		return 0;
-	while((entries<NENTRIES)&&(!OK))
-	{
-		asm{
-			mov ah,0x3;
-			mov al,0x1;
-			mov ch,track;
-			mov cl,sector;
-			mov dh,head;
-			mov dl,drive;
-			mov es,segb;
-			mov bx,ofsb;
-			int 0x13;
-			mov r,0;
-			jnc done;
-			mov r,1;
-		}
-		done:
-		if(!r)
-			OK=1;
-		entries++;
-	}
-	return OK;
+	tamcluster=Drive[drive].TamSector*dd->SectorCluster;
+	return longmul2(dd->NClusters,tamcluster);
 }
 
 BYTE DirProcura(BYTE drive,TDIR_RECORD far *rec,BYTE first)
 {
 	WORD entrada;
+	FSN_DATA far *dd;
 	ERRO=FALSE;
 	if((Drive[drive].Montada==FALSE)||(drive>=MAXDRIVES))
 	{
 		ERRO=EINVDRV;
 		return 0;
 	}
+
+	dd = fsnDriveData(drive);
+
 	entrada=GetEntrada(drive,first);
-	if (entrada<Drive[drive].NEntradas)
+	if (entrada<dd->NEntradas)
 	{
-		GetNomeEntrada(Drive[drive].Entrada[entrada].Nome,rec->nome);
-		rec->Data=UnPacked_Data(Drive[drive].Entrada[entrada].Data);
-		rec->Hora=UnPacked_Hora(Drive[drive].Entrada[entrada].Hora);
-		rec->Attr=Drive[drive].Entrada[entrada].Attr;
-		rec->Tamanho=Drive[drive].Entrada[entrada].Tamanho;
+		GetNomeEntrada(dd->Entrada[entrada].Nome,rec->nome);
+		rec->Data=UnPacked_Data(dd->Entrada[entrada].Data);
+		rec->Hora=UnPacked_Hora(dd->Entrada[entrada].Hora);
+		rec->Attr=dd->Entrada[entrada].Attr;
+		rec->Tamanho=dd->Entrada[entrada].Tamanho;
 		return 1;
 	}
 	else
@@ -1408,4 +1299,33 @@ BYTE DirProcura(BYTE drive,TDIR_RECORD far *rec,BYTE first)
 		rec->nome[0]=0;
 		return 0;
 	}
+}
+
+static IFS fs_native = {
+	fsnCriarFicheiro,
+	fsnChmod,
+	fsnRenomear,
+	fsnEliminar,
+	fsnFecharFicheiro,
+	fsnFlushFicheiro,
+	fsnGetAttr,
+	fsnAbrirFicheiro,
+	fsnEscreverCaracter,
+	fsnLerCaracter,
+	fsnEscreverCluster,
+	fsnLerCluster,
+	fsnPosicionarFicheiro,
+	fsnTruncarFicheiro,
+	fsnFreeClusters,
+	fsnFreeSpace,
+	fsnDiskSpace,
+	fsnMontada,
+	fsnLerFicheiro,
+	fsnEscreverFicheiro,
+	fsnDesMontarDrive,
+};
+
+IFS *fsnGetDriver()
+{
+	return &fs_native;
 }

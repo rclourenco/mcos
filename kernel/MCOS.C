@@ -24,13 +24,13 @@ unsigned CurProcess=0;
 void System_Init()
 {
   CurProcess=1;
- // kprintf("Memory Init.............................................");
+  kprintf("Memory Init.............................................");
 	MEM_Init2();
-//	kprintf("[Done]\r\n");
+   kprintf("[Done]\r\n");
 
-  //kprintf("File System Init........................................");
+  kprintf("File System Init........................................");
 	INITFS();
-	//kprintf("[Done]\r\n");
+  kprintf("[Done]\r\n");
 
 	if(ERRO)
 	{

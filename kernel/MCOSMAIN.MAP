@@ -1,10 +1,10 @@
 
  Start  Stop   Length Name               Class
 
- 00000H 06AAEH 06AAFH _TEXT              CODE
- 06AB0H 070E8H 00639H _DATA              DATA
- 070EAH 0764BH 00562H _BSS               BSS
- 0764CH 0764CH 00000H _BSSEND            STACK
+ 00000H 0720CH 0720DH _TEXT              CODE
+ 07210H 078FAH 006EBH _DATA              DATA
+ 078FCH 07E33H 00538H _BSS               BSS
+ 07E34H 07E34H 00000H _BSSEND            STACK
 
 
 Detailed map of segments
@@ -13,30 +13,30 @@ Detailed map of segments
  0000:013E 0A85 C=CODE   S=_TEXT          G=DGROUP  M=mcoslib.c  ACBP=28
  0000:0BC3 002A C=CODE   S=_TEXT          G=DGROUP  M=fserror.c  ACBP=28
  0000:0BED 05F7 C=CODE   S=_TEXT          G=DGROUP  M=mcosmem.c  ACBP=28
- 0000:11E4 2C86 C=CODE   S=_TEXT          G=DGROUP  M=fsystem.c  ACBP=28
- 0000:3E6A 0F39 C=CODE   S=_TEXT          G=DGROUP  M=mcosterm.c ACBP=28
- 0000:4DA3 0D8C C=CODE   S=_TEXT          G=DGROUP  M=mcos.c     ACBP=28
- 0000:5B2F 0EE9 C=CODE   S=_TEXT          G=DGROUP  M=mcshell.c  ACBP=28
- 0000:6A18 0097 C=CODE   S=_TEXT          G=DGROUP  M=mcosmain.c ACBP=28
- 0000:6AB0 004B C=DATA   S=_DATA          G=DGROUP  M=startbin.ASM ACBP=68
- 0000:6AFC 0019 C=DATA   S=_DATA          G=DGROUP  M=mcoslib.c  ACBP=48
- 0000:6B16 00EE C=DATA   S=_DATA          G=DGROUP  M=fserror.c  ACBP=48
- 0000:6C04 0016 C=DATA   S=_DATA          G=DGROUP  M=mcosmem.c  ACBP=48
- 0000:6C1A 0002 C=DATA   S=_DATA          G=DGROUP  M=fsystem.c  ACBP=48
- 0000:6C1C 000B C=DATA   S=_DATA          G=DGROUP  M=mcosterm.c ACBP=48
- 0000:6C28 00E6 C=DATA   S=_DATA          G=DGROUP  M=mcos.c     ACBP=48
- 0000:6D0E 03BA C=DATA   S=_DATA          G=DGROUP  M=mcshell.c  ACBP=48
- 0000:70C8 0021 C=DATA   S=_DATA          G=DGROUP  M=mcosmain.c ACBP=48
- 0000:70EA 0000 C=BSS    S=_BSS           G=DGROUP  M=startbin.ASM ACBP=48
- 0000:70EA 0000 C=BSS    S=_BSS           G=DGROUP  M=mcoslib.c  ACBP=48
- 0000:70EA 0000 C=BSS    S=_BSS           G=DGROUP  M=fserror.c  ACBP=48
- 0000:70EA 0008 C=BSS    S=_BSS           G=DGROUP  M=mcosmem.c  ACBP=48
- 0000:70F2 004E C=BSS    S=_BSS           G=DGROUP  M=fsystem.c  ACBP=48
- 0000:7140 0372 C=BSS    S=_BSS           G=DGROUP  M=mcosterm.c ACBP=48
- 0000:74B2 000C C=BSS    S=_BSS           G=DGROUP  M=mcos.c     ACBP=48
- 0000:74BE 018D C=BSS    S=_BSS           G=DGROUP  M=mcshell.c  ACBP=48
- 0000:764C 0000 C=BSS    S=_BSS           G=DGROUP  M=mcosmain.c ACBP=48
- 0000:764C 0000 C=STACK  S=_BSSEND        G=DGROUP  M=startbin.ASM ACBP=28
+ 0000:11E4 3365 C=CODE   S=_TEXT          G=DGROUP  M=fs.c       ACBP=28
+ 0000:4549 0F39 C=CODE   S=_TEXT          G=DGROUP  M=mcosterm.c ACBP=28
+ 0000:5482 0E0A C=CODE   S=_TEXT          G=DGROUP  M=mcos.c     ACBP=28
+ 0000:628C 0EEA C=CODE   S=_TEXT          G=DGROUP  M=mcshell.c  ACBP=28
+ 0000:7176 0097 C=CODE   S=_TEXT          G=DGROUP  M=mcosmain.c ACBP=28
+ 0000:7210 004B C=DATA   S=_DATA          G=DGROUP  M=startbin.ASM ACBP=68
+ 0000:725C 0019 C=DATA   S=_DATA          G=DGROUP  M=mcoslib.c  ACBP=48
+ 0000:7276 00EE C=DATA   S=_DATA          G=DGROUP  M=fserror.c  ACBP=48
+ 0000:7364 0016 C=DATA   S=_DATA          G=DGROUP  M=mcosmem.c  ACBP=48
+ 0000:737A 0030 C=DATA   S=_DATA          G=DGROUP  M=fs.c       ACBP=48
+ 0000:73AA 000B C=DATA   S=_DATA          G=DGROUP  M=mcosterm.c ACBP=48
+ 0000:73B6 016A C=DATA   S=_DATA          G=DGROUP  M=mcos.c     ACBP=48
+ 0000:7520 03BA C=DATA   S=_DATA          G=DGROUP  M=mcshell.c  ACBP=48
+ 0000:78DA 0021 C=DATA   S=_DATA          G=DGROUP  M=mcosmain.c ACBP=48
+ 0000:78FC 0000 C=BSS    S=_BSS           G=DGROUP  M=startbin.ASM ACBP=48
+ 0000:78FC 0000 C=BSS    S=_BSS           G=DGROUP  M=mcoslib.c  ACBP=48
+ 0000:78FC 0000 C=BSS    S=_BSS           G=DGROUP  M=fserror.c  ACBP=48
+ 0000:78FC 0008 C=BSS    S=_BSS           G=DGROUP  M=mcosmem.c  ACBP=48
+ 0000:7904 0024 C=BSS    S=_BSS           G=DGROUP  M=fs.c       ACBP=48
+ 0000:7928 0372 C=BSS    S=_BSS           G=DGROUP  M=mcosterm.c ACBP=48
+ 0000:7C9A 000C C=BSS    S=_BSS           G=DGROUP  M=mcos.c     ACBP=48
+ 0000:7CA6 018D C=BSS    S=_BSS           G=DGROUP  M=mcshell.c  ACBP=48
+ 0000:7E34 0000 C=BSS    S=_BSS           G=DGROUP  M=mcosmain.c ACBP=48
+ 0000:7E34 0000 C=STACK  S=_BSSEND        G=DGROUP  M=startbin.ASM ACBP=28
 
   Address         Publics by Name
 
@@ -57,165 +57,199 @@ Detailed map of segments
  0000:0084       N_LUMOD@
  0000:011B idle  N_LXLSH@
  0000:004F idle  N_SCOPY@
- 0000:2697       _AbrirFicheiro
- 0000:2471 idle  _AlocaCluster
- 0000:1A71 idle  _AlocaMemoria
+ 0000:4216       _AbrirFicheiro
+ 0000:24C3 idle  _AlocaCluster
+ 0000:144B idle  _AlocaMemoria
  0000:0EF5       _Aloca_Segmento
- 0000:69EE idle  _AMem
+ 0000:714C idle  _AMem
  0000:11E4       _ApagaErro
- 0000:74BE idle  _argumento
+ 0000:7CA6 idle  _argumento
  0000:01E8 idle  _bcd2bin
  0000:021D idle  _bin2bcd
- 0000:70F8 idle  _BlocoControlo
- 0000:6C29 idle  _bootdrive
- 0000:70F4 idle  _BootRecord
- 0000:4F26 idle  _Callprg
- 0000:4407       _Char_Output
- 0000:442B       _Char_TTOutput
- 0000:5DAF idle  _ChDrive
- 0000:1552       _Chmod
- 0000:5474 idle  _Close
- 0000:1B6F       _CLOSEFS
- 0000:5DA0 idle  _Cls
- 0000:753E idle  _comando
- 0000:1763       _CriarFicheiro
- 0000:4E42 idle  _CtrlBreak
- 0000:6C28       _CurDrv
- 0000:6C2A       _CurProcess
- 0000:6C08 idle  _Default_Label
+ 0000:790A idle  _BlocoControlo
+ 0000:73B7 idle  _bootdrive
+ 0000:7906 idle  _BootRecord
+ 0000:5627 idle  _Callprg
+ 0000:4AE6       _Char_Output
+ 0000:4B0A       _Char_TTOutput
+ 0000:650C idle  _ChDrive
+ 0000:4130       _Chmod
+ 0000:5B75 idle  _Close
+ 0000:4512       _CLOSEFS
+ 0000:64FD idle  _Cls
+ 0000:7D26 idle  _comando
+ 0000:4106       _CriarFicheiro
+ 0000:5543 idle  _CtrlBreak
+ 0000:73B6       _CurDrv
+ 0000:73B8       _CurProcess
+ 0000:7368 idle  _Default_Label
  0000:050F       _dels
- 0000:1FF7       _DesMontarDrive
- 0000:3CFC       _DirProcura
- 0000:3BAB       _DiskSpace
- 0000:56C8 idle  _Dispatcher
- 0000:70FC idle  _Drive
- 0000:5233 idle  _Dump
- 0000:659C idle  _DumpFile
- 0000:6A42 idle  _dump_mem
+ 0000:44DD       _DesMontarDrive
+ 0000:3FB1       _DirProcura
+ 0000:4374       _DiskSpace
+ 0000:5E0F idle  _Dispatcher
+ 0000:790E idle  _Drive
+ 0000:5934 idle  _Dump
+ 0000:6CFA idle  _DumpFile
+ 0000:71A0 idle  _dump_mem
  0000:0B60 idle  _dump_mem2
- 0000:6464 idle  _Ed
- 0000:1217       _Eliminar
- 0000:568F idle  _EndOfFile
- 0000:6AE3 idle  _environ
- 0000:6AEF idle  _errno
- 0000:70F2       _ERRO
- 0000:2C5F       _EscreverCaracter
- 0000:306B idle  _EscreverCluster
- 0000:2166       _EscreverSector
- 0000:3C90 idle  _EscreverSectorFisico
- 0000:643C idle  _escreve_erro
- 0000:5F97 idle  _Executar
- 0000:6A18       _exit
- 0000:4F00 idle  _Exit_Process
+ 0000:6BC2 idle  _Ed
+ 0000:4188       _Eliminar
+ 0000:5DD6 idle  _EndOfFile
+ 0000:7243 idle  _environ
+ 0000:724F idle  _errno
+ 0000:7904       _ERRO
+ 0000:4246       _EscreverCaracter
+ 0000:4290 idle  _EscreverCluster
+ 0000:4400       _EscreverFicheiro
+ 0000:15D0       _EscreverSector
+ 0000:172C idle  _EscreverSectorFisico
+ 0000:6B9A idle  _escreve_erro
+ 0000:66F5 idle  _Executar
+ 0000:7176       _exit
+ 0000:5601 idle  _Exit_Process
  0000:0E13 idle  _farmemcp
- 0000:29DF       _FecharFicheiro
- 0000:2BE3 idle  _FecharFicheirosDrive
- 0000:2C31       _FecharFicheirosProcesso
- 0000:13A1       _Ficheiro_Pos
- 0000:13EE       _Ficheiro_Size
- 0000:1331       _Fim_Ficheiro
- 0000:54A9 idle  _Flush
- 0000:2B0B       _FlushFicheiro
- 0000:6A0B idle  _FMem
- 0000:3AD8 idle  _FreeClusters
- 0000:3B2D       _FreeSpace
- 0000:15E2       _GetAttr
- 0000:5B3D idle  _getcmd
+ 0000:41AF       _FecharFicheiro
+ 0000:442D idle  _FecharFicheirosDrive
+ 0000:447B       _FecharFicheirosProcesso
+ 0000:43B7       _Ficheiro_Pos
+ 0000:43C5       _Ficheiro_Size
+ 0000:43A9       _Fim_Ficheiro
+ 0000:5BAA idle  _Flush
+ 0000:41CD       _FlushFicheiro
+ 0000:7169 idle  _FMem
+ 0000:432C idle  _FreeClusters
+ 0000:434F       _FreeSpace
+ 0000:11EF idle  _fsbaseCloseFs
+ 0000:1808 idle  _fsbaseFicheiro_Pos
+ 0000:1855 idle  _fsbaseFicheiro_Size
+ 0000:1798 idle  _fsbaseFim_Ficheiro
+ 0000:12A4 idle  _fsbaseGetDriver
+ 0000:12E4 idle  _fsbaseGetDriverForFcb
+ 0000:120E idle  _fsbaseInitFs
+ 0000:73A4 idle  _fsmounters
+ 0000:268C idle  _fsnAbrirFicheiro
+ 0000:2939 idle  _fsnBlocoEntrada
+ 0000:1ADF idle  _fsnChmod
+ 0000:1CAD idle  _fsnCriarFicheiro
+ 0000:2253 idle  _fsnDesMontarDrive
+ 0000:3F43 idle  _fsnDiskSpace
+ 0000:18A2 idle  _fsnDriveData
+ 0000:18E5 idle  _fsnEliminar
+ 0000:2BD5 idle  _fsnEscreverCaracter
+ 0000:344D idle  _fsnEscreverCluster
+ 0000:2FDF idle  _fsnEscreverFicheiro
+ 0000:29F5 idle  _fsnFecharFicheiro
+ 0000:2AFF idle  _fsnFlushFicheiro
+ 0000:3E68 idle  _fsnFreeClusters
+ 0000:3EC7 idle  _fsnFreeSpace
+ 0000:1B70 idle  _fsnGetAttr
+ 0000:40FC idle  _fsnGetDriver
+ 0000:35DB idle  _fsnLerCaracter
+ 0000:3514 idle  _fsnLerCluster
+ 0000:380B idle  _fsnLerFicheiro
+ 0000:18BD idle  _fsnMontada
+ 0000:1E80 idle  _fsnMontarDrive
+ 0000:3B26 idle  _fsnPosicionarFicheiro
+ 0000:19DF idle  _fsnRenomear
+ 0000:3D37 idle  _fsnTruncarFicheiro
+ 0000:41EB       _GetAttr
+ 0000:629A idle  _getcmd
  0000:013E       _GetDate
- 0000:5313 idle  _getDescriptorIdx
- 0000:1673 idle  _GetEntrada
- 0000:2256 idle  _GetFat
- 0000:266A idle  _GetFreeBloco
- 0000:5296 idle  _getFreeDescriptor
+ 0000:5A14 idle  _getDescriptorIdx
+ 0000:1C02 idle  _GetEntrada
+ 0000:22D6 idle  _GetFat
+ 0000:14B3 idle  _GetFreeBloco
+ 0000:5997 idle  _getFreeDescriptor
  0000:019B       _GetHora
- 0000:3F71       _GetIntVect
+ 0000:4650       _GetIntVect
  0000:03AA       _GetKey
  0000:0BC3       _GetMsgErro
- 0000:2646 idle  _GetNomeEntrada
+ 0000:2668 idle  _GetNomeEntrada
  0000:1039 idle  _GetProcessLabel
  0000:0E63 idle  _Get_Bloco
- 0000:3EFF       _Get_Str
- 0000:5F88 idle  _Help
- 0000:6AFC       _hextab
- 0000:5F6F idle  _Info
- 0000:1AD9       _INITFS
- 0000:754B idle  _input
+ 0000:45DE       _Get_Str
+ 0000:66E6 idle  _Help
+ 0000:725C       _hextab
+ 0000:66CD idle  _Info
+ 0000:4508       _INITFS
+ 0000:7D33 idle  _input
  0000:055F idle  _ins
  0000:05E4       _insc
- 0000:4ECA       _kill_proc
+ 0000:55CB       _kill_proc
  0000:063F       _kprintf
- 0000:6C04 idle  _Label_MF
- 0000:3233       _LerCaracter
- 0000:314F idle  _LerCluster
- 0000:3465       _LerFicheiro
- 0000:2076       _LerSector
- 0000:3C24 idle  _LerSectorFisico
- 0000:1980 idle  _Ler_Packed_Data
- 0000:19F8 idle  _Ler_Packed_Hora
- 0000:1919 idle  _LibertaClusters
- 0000:1AB1 idle  _LibertaMemoria
+ 0000:7364 idle  _Label_MF
+ 0000:426D       _LerCaracter
+ 0000:42BA idle  _LerCluster
+ 0000:43D3       _LerFicheiro
+ 0000:14E0       _LerSector
+ 0000:16C0 idle  _LerSectorFisico
+ 0000:135A idle  _Ler_Packed_Data
+ 0000:13D2 idle  _Ler_Packed_Hora
+ 0000:1E14 idle  _LibertaClusters
+ 0000:148B idle  _LibertaMemoria
  0000:1165       _LibertaMemPID
  0000:1047       _Liberta_Segmento
- 0000:5097 idle  _Load
+ 0000:5798 idle  _Load
  0000:09BC idle  _longmul
  0000:0A5A       _longmul2
- 0000:60CF idle  _Ls
- 0000:6A88       _main
- 0000:68EA idle  _Mem
+ 0000:682D idle  _Ls
+ 0000:71E6       _main
+ 0000:7048 idle  _Mem
  0000:0BED idle  _MEM_Copy
  0000:0DC5       _MEM_Done
- 0000:70EA idle  _MEM_End
+ 0000:78FC idle  _MEM_End
  0000:0D9A idle  _MEM_Init
  0000:0DD1       _MEM_Init2
  0000:10D2 idle  _MEM_Optimize
  0000:0E8E       _MEM_Search
- 0000:70F0 idle  _MEM_SearchNext
+ 0000:7902 idle  _MEM_SearchNext
  0000:0DBB idle  _MEM_seg
  0000:0D9F       _MEM_Set
- 0000:70EC idle  _MEM_Size
- 0000:70EE idle  _MEM_Start
- 0000:49F8       _ModoVideo
- 0000:11EF       _Montada
- 0000:1BBD       _MontarDrive
- 0000:5E30 idle  _MountDrive
- 0000:6B16 idle  _MsgErro
- 0000:4B5D idle  _NewKeyInt
- 0000:25CE idle  _NomeFicheiroCmp
- 0000:7140 idle  _OldCursor
- 0000:74B2 idle  _oldint1B
- 0000:74B6 idle  _oldint80
- 0000:7142 idle  _OldKeyInt
- 0000:5366 idle  _Open
- 0000:6009 idle  _parse
- 0000:6A28       _pong
- 0000:3782       _PosicionarFicheiro
- 0000:5615 idle  _Position
+ 0000:78FE idle  _MEM_Size
+ 0000:7900 idle  _MEM_Start
+ 0000:50D7       _ModoVideo
+ 0000:4399       _Montada
+ 0000:44A9       _MontarDrive
+ 0000:658D idle  _MountDrive
+ 0000:7276 idle  _MsgErro
+ 0000:523C idle  _NewKeyInt
+ 0000:25F0 idle  _NomeFicheiroCmp
+ 0000:7928 idle  _OldCursor
+ 0000:7C9A idle  _oldint1B
+ 0000:7C9E idle  _oldint80
+ 0000:792A idle  _OldKeyInt
+ 0000:5A67 idle  _Open
+ 0000:6767 idle  _parse
+ 0000:7186       _pong
+ 0000:42E4       _PosicionarFicheiro
+ 0000:5D5C idle  _Position
  0000:025A idle  _power
- 0000:2559 idle  _ProcurarEntrada
+ 0000:257A idle  _ProcurarEntrada
  0000:0FC4 idle  _ProcurarMem
- 0000:74BA idle  _program
- 0000:6D0E idle  _prompt1
- 0000:6D17 idle  _prompt2
+ 0000:7CA2 idle  _program
+ 0000:7520 idle  _prompt1
+ 0000:7529 idle  _prompt2
  0000:0752       _putchar
- 0000:5559 idle  _Read
- 0000:551E idle  _ReadChar
+ 0000:5C5A idle  _Read
+ 0000:5C1F idle  _ReadChar
  0000:0C37       _Realoca_Segmento
- 0000:143B       _Renomear
- 0000:51C6       _Run
- 0000:559F idle  _Seek
- 0000:3F2E       _send_str
- 0000:52CF idle  _setDescriptor
- 0000:22BD idle  _SetFat
- 0000:3FAF       _SetIntVect
- 0000:2608 idle  _SetNomeEntrada
- 0000:4F80 idle  _SetPSP
- 0000:6A9D idle  _SetupMemory
+ 0000:415B       _Renomear
+ 0000:58C7       _Run
+ 0000:5CE6 idle  _Seek
+ 0000:460D       _send_str
+ 0000:59D0 idle  _setDescriptor
+ 0000:233A idle  _SetFat
+ 0000:468E       _SetIntVect
+ 0000:262A idle  _SetNomeEntrada
+ 0000:5681 idle  _SetPSP
+ 0000:71FB idle  _SetupMemory
  0000:0E38 idle  _Set_Bloco
- 0000:5CF5 idle  _set_keys
- 0000:5D40 idle  _set_terminal
- 0000:5B2F       _shell
- 0000:60AB idle  _showprompt
- 0000:5652 idle  _Size
+ 0000:6452 idle  _set_keys
+ 0000:649D idle  _set_terminal
+ 0000:628C       _shell
+ 0000:6809 idle  _showprompt
+ 0000:5D99 idle  _Size
  0000:03D9       _Strcmp
  0000:04BC idle  _Strcmpx
  0000:0480       _Strcpy
@@ -223,88 +257,89 @@ Detailed map of segments
  0000:03C0       _Strlen
  0000:04A3       _Strlenx
  0000:042C idle  _Strncmp
- 0000:63D3 idle  _strp
- 0000:6078 idle  _Sync
- 0000:232E       _SyncDrive
- 0000:4E21       _System_Done
- 0000:4DA3       _System_Init
- 0000:714C idle  _Term_Attr
- 0000:714E idle  _Term_b
- 0000:7151 idle  _Term_BackBuffer
- 0000:714F idle  _Term_Bp
- 0000:7251 idle  _Term_Buffer
- 0000:4570       _Term_ClearLine
- 0000:4550 idle  _Term_Cls
- 0000:4447 idle  _Term_Cursor
- 0000:4B15 idle  _Term_CursorB
- 0000:4AC1 idle  _Term_CursorD
- 0000:4ACD idle  _Term_CursorF
- 0000:4A86 idle  _Term_CursorL
- 0000:4A4E idle  _Term_CursorR
- 0000:4A92 idle  _Term_CursorU
- 0000:4037       _Term_Done
- 0000:3EE8 idle  _Term_EdCB
- 0000:3ECA idle  _Term_EdCF
- 0000:404F idle  _Term_Edit
- 0000:3E74 idle  _Term_EdWr
- 0000:714B idle  _Term_Esc
- 0000:45BF idle  _Term_EscCod
- 0000:47D9 idle  _Term_EscInit
- 0000:7148 idle  _Term_EscP
- 0000:714A idle  _Term_EscPi
- 0000:7147 idle  _Term_EscS
- 0000:47F7 idle  _Term_EscSP
- 0000:7146 idle  _Term_EscST
- 0000:3E6A       _Term_Flush
- 0000:4507 idle  _Term_GetActivePage
- 0000:4531 idle  _Term_GetCols
- 0000:44A6 idle  _Term_GetCursorPos
- 0000:44D5 idle  _Term_GetVideoAttr
- 0000:3FE2       _Term_Init
- 0000:431F       _Term_Input
- 0000:7351 idle  _Term_KeyA
- 0000:7352 idle  _Term_KeyBuffer
- 0000:4359       _Term_Output
- 0000:4896       _Term_SetAttr
- 0000:4489 idle  _Term_SetCursorPos
- 0000:4874 idle  _Term_SetKeyInit
- 0000:4824 idle  _Term_SetKeySend
- 0000:4A04 idle  _Term_SetModo
- 0000:714D idle  _Term_Tabs
- 0000:514C idle  _TestValidPrg
- 0000:517F idle  _TestValidPsp
- 0000:39A7       _TruncarFicheiro
- 0000:55E0 idle  _Truncate
- 0000:64D0 idle  _Type
- 0000:5EBB idle  _UnMountDrive
- 0000:19C0 idle  _UnPacked_Data
- 0000:1A39 idle  _UnPacked_Hora
- 0000:2992 idle  _VerificarAberto
- 0000:54DE idle  _WriteChar
+ 0000:6B31 idle  _strp
+ 0000:67D6 idle  _Sync
+ 0000:23A8       _SyncDrive
+ 0000:5522       _System_Done
+ 0000:5482       _System_Init
+ 0000:7934 idle  _Term_Attr
+ 0000:7936 idle  _Term_b
+ 0000:7939 idle  _Term_BackBuffer
+ 0000:7937 idle  _Term_Bp
+ 0000:7A39 idle  _Term_Buffer
+ 0000:4C4F       _Term_ClearLine
+ 0000:4C2F idle  _Term_Cls
+ 0000:4B26 idle  _Term_Cursor
+ 0000:51F4 idle  _Term_CursorB
+ 0000:51A0 idle  _Term_CursorD
+ 0000:51AC idle  _Term_CursorF
+ 0000:5165 idle  _Term_CursorL
+ 0000:512D idle  _Term_CursorR
+ 0000:5171 idle  _Term_CursorU
+ 0000:4716       _Term_Done
+ 0000:45C7 idle  _Term_EdCB
+ 0000:45A9 idle  _Term_EdCF
+ 0000:472E idle  _Term_Edit
+ 0000:4553 idle  _Term_EdWr
+ 0000:7933 idle  _Term_Esc
+ 0000:4C9E idle  _Term_EscCod
+ 0000:4EB8 idle  _Term_EscInit
+ 0000:7930 idle  _Term_EscP
+ 0000:7932 idle  _Term_EscPi
+ 0000:792F idle  _Term_EscS
+ 0000:4ED6 idle  _Term_EscSP
+ 0000:792E idle  _Term_EscST
+ 0000:4549       _Term_Flush
+ 0000:4BE6 idle  _Term_GetActivePage
+ 0000:4C10 idle  _Term_GetCols
+ 0000:4B85 idle  _Term_GetCursorPos
+ 0000:4BB4 idle  _Term_GetVideoAttr
+ 0000:46C1       _Term_Init
+ 0000:49FE       _Term_Input
+ 0000:7B39 idle  _Term_KeyA
+ 0000:7B3A idle  _Term_KeyBuffer
+ 0000:4A38       _Term_Output
+ 0000:4F75       _Term_SetAttr
+ 0000:4B68 idle  _Term_SetCursorPos
+ 0000:4F53 idle  _Term_SetKeyInit
+ 0000:4F03 idle  _Term_SetKeySend
+ 0000:50E3 idle  _Term_SetModo
+ 0000:7935 idle  _Term_Tabs
+ 0000:584D idle  _TestValidPrg
+ 0000:5880 idle  _TestValidPsp
+ 0000:430E       _TruncarFicheiro
+ 0000:5D27 idle  _Truncate
+ 0000:6C2E idle  _Type
+ 0000:6619 idle  _UnMountDrive
+ 0000:139A idle  _UnPacked_Data
+ 0000:1413 idle  _UnPacked_Hora
+ 0000:2990 idle  _VerificarAberto
+ 0000:5CA0 idle  _Write
+ 0000:5BDF idle  _WriteChar
  0000:0762       _writehex
  0000:0ABC idle  _writehex2
  0000:0861 idle  _writelongnum
  0000:07DD idle  _writenum
  0000:0734       _writestr
- 0000:3F53       _write_str
- 0000:6AF1 idle  __8087
- 0000:6ADF idle  __argc
- 0000:6AE1 idle  __argv
- 0000:6AE5 idle  __envLng
- 0000:6AE7 idle  __envseg
- 0000:6AE9 idle  __envSize
+ 0000:4632       _write_str
+ 0000:7251 idle  __8087
+ 0000:723F idle  __argc
+ 0000:7241 idle  __argv
+ 0000:7245 idle  __envLng
+ 0000:7247 idle  __envseg
+ 0000:7249 idle  __envSize
  0000:0041       __exit
  0000:0BAC       __fmemcpy
- 0000:6AED idle  __osmajor
- 0000:6AEE idle  __osminor
+ 0000:724D idle  __osmajor
+ 0000:724E idle  __osminor
  0000:004B idle  __ping
- 0000:6AEB idle  __psp
- 0000:6AF3       __StartTime1
- 0000:6AF5       __StartTime2
+ 0000:724B idle  __psp
+ 0000:7253       __StartTime1
+ 0000:7255       __StartTime2
  0000:029A       __ultoa
- 0000:6AED idle  __version
- 0000:6AF9 idle  ___brklvl
- 0000:6AF7 idle  ___heapbase
+ 0000:724D idle  __version
+ 0000:7259 idle  ___brklvl
+ 0000:7257 idle  ___heapbase
 
   Address         Publics by Value
 
@@ -374,205 +409,240 @@ Detailed map of segments
  0000:10D2 idle  _MEM_Optimize
  0000:1165       _LibertaMemPID
  0000:11E4       _ApagaErro
- 0000:11EF       _Montada
- 0000:1217       _Eliminar
- 0000:1331       _Fim_Ficheiro
- 0000:13A1       _Ficheiro_Pos
- 0000:13EE       _Ficheiro_Size
- 0000:143B       _Renomear
- 0000:1552       _Chmod
- 0000:15E2       _GetAttr
- 0000:1673 idle  _GetEntrada
- 0000:1763       _CriarFicheiro
- 0000:1919 idle  _LibertaClusters
- 0000:1980 idle  _Ler_Packed_Data
- 0000:19C0 idle  _UnPacked_Data
- 0000:19F8 idle  _Ler_Packed_Hora
- 0000:1A39 idle  _UnPacked_Hora
- 0000:1A71 idle  _AlocaMemoria
- 0000:1AB1 idle  _LibertaMemoria
- 0000:1AD9       _INITFS
- 0000:1B6F       _CLOSEFS
- 0000:1BBD       _MontarDrive
- 0000:1FF7       _DesMontarDrive
- 0000:2076       _LerSector
- 0000:2166       _EscreverSector
- 0000:2256 idle  _GetFat
- 0000:22BD idle  _SetFat
- 0000:232E       _SyncDrive
- 0000:2471 idle  _AlocaCluster
- 0000:2559 idle  _ProcurarEntrada
- 0000:25CE idle  _NomeFicheiroCmp
- 0000:2608 idle  _SetNomeEntrada
- 0000:2646 idle  _GetNomeEntrada
- 0000:266A idle  _GetFreeBloco
- 0000:2697       _AbrirFicheiro
- 0000:2992 idle  _VerificarAberto
- 0000:29DF       _FecharFicheiro
- 0000:2B0B       _FlushFicheiro
- 0000:2BE3 idle  _FecharFicheirosDrive
- 0000:2C31       _FecharFicheirosProcesso
- 0000:2C5F       _EscreverCaracter
- 0000:306B idle  _EscreverCluster
- 0000:314F idle  _LerCluster
- 0000:3233       _LerCaracter
- 0000:3465       _LerFicheiro
- 0000:3782       _PosicionarFicheiro
- 0000:39A7       _TruncarFicheiro
- 0000:3AD8 idle  _FreeClusters
- 0000:3B2D       _FreeSpace
- 0000:3BAB       _DiskSpace
- 0000:3C24 idle  _LerSectorFisico
- 0000:3C90 idle  _EscreverSectorFisico
- 0000:3CFC       _DirProcura
- 0000:3E6A       _Term_Flush
- 0000:3E74 idle  _Term_EdWr
- 0000:3ECA idle  _Term_EdCF
- 0000:3EE8 idle  _Term_EdCB
- 0000:3EFF       _Get_Str
- 0000:3F2E       _send_str
- 0000:3F53       _write_str
- 0000:3F71       _GetIntVect
- 0000:3FAF       _SetIntVect
- 0000:3FE2       _Term_Init
- 0000:4037       _Term_Done
- 0000:404F idle  _Term_Edit
- 0000:431F       _Term_Input
- 0000:4359       _Term_Output
- 0000:4407       _Char_Output
- 0000:442B       _Char_TTOutput
- 0000:4447 idle  _Term_Cursor
- 0000:4489 idle  _Term_SetCursorPos
- 0000:44A6 idle  _Term_GetCursorPos
- 0000:44D5 idle  _Term_GetVideoAttr
- 0000:4507 idle  _Term_GetActivePage
- 0000:4531 idle  _Term_GetCols
- 0000:4550 idle  _Term_Cls
- 0000:4570       _Term_ClearLine
- 0000:45BF idle  _Term_EscCod
- 0000:47D9 idle  _Term_EscInit
- 0000:47F7 idle  _Term_EscSP
- 0000:4824 idle  _Term_SetKeySend
- 0000:4874 idle  _Term_SetKeyInit
- 0000:4896       _Term_SetAttr
- 0000:49F8       _ModoVideo
- 0000:4A04 idle  _Term_SetModo
- 0000:4A4E idle  _Term_CursorR
- 0000:4A86 idle  _Term_CursorL
- 0000:4A92 idle  _Term_CursorU
- 0000:4AC1 idle  _Term_CursorD
- 0000:4ACD idle  _Term_CursorF
- 0000:4B15 idle  _Term_CursorB
- 0000:4B5D idle  _NewKeyInt
- 0000:4DA3       _System_Init
- 0000:4E21       _System_Done
- 0000:4E42 idle  _CtrlBreak
- 0000:4ECA       _kill_proc
- 0000:4F00 idle  _Exit_Process
- 0000:4F26 idle  _Callprg
- 0000:4F80 idle  _SetPSP
- 0000:5097 idle  _Load
- 0000:514C idle  _TestValidPrg
- 0000:517F idle  _TestValidPsp
- 0000:51C6       _Run
- 0000:5233 idle  _Dump
- 0000:5296 idle  _getFreeDescriptor
- 0000:52CF idle  _setDescriptor
- 0000:5313 idle  _getDescriptorIdx
- 0000:5366 idle  _Open
- 0000:5474 idle  _Close
- 0000:54A9 idle  _Flush
- 0000:54DE idle  _WriteChar
- 0000:551E idle  _ReadChar
- 0000:5559 idle  _Read
- 0000:559F idle  _Seek
- 0000:55E0 idle  _Truncate
- 0000:5615 idle  _Position
- 0000:5652 idle  _Size
- 0000:568F idle  _EndOfFile
- 0000:56C8 idle  _Dispatcher
- 0000:5B2F       _shell
- 0000:5B3D idle  _getcmd
- 0000:5CF5 idle  _set_keys
- 0000:5D40 idle  _set_terminal
- 0000:5DA0 idle  _Cls
- 0000:5DAF idle  _ChDrive
- 0000:5E30 idle  _MountDrive
- 0000:5EBB idle  _UnMountDrive
- 0000:5F6F idle  _Info
- 0000:5F88 idle  _Help
- 0000:5F97 idle  _Executar
- 0000:6009 idle  _parse
- 0000:6078 idle  _Sync
- 0000:60AB idle  _showprompt
- 0000:60CF idle  _Ls
- 0000:63D3 idle  _strp
- 0000:643C idle  _escreve_erro
- 0000:6464 idle  _Ed
- 0000:64D0 idle  _Type
- 0000:659C idle  _DumpFile
- 0000:68EA idle  _Mem
- 0000:69EE idle  _AMem
- 0000:6A0B idle  _FMem
- 0000:6A18       _exit
- 0000:6A28       _pong
- 0000:6A42 idle  _dump_mem
- 0000:6A88       _main
- 0000:6A9D idle  _SetupMemory
- 0000:6ADF idle  __argc
- 0000:6AE1 idle  __argv
- 0000:6AE3 idle  _environ
- 0000:6AE5 idle  __envLng
- 0000:6AE7 idle  __envseg
- 0000:6AE9 idle  __envSize
- 0000:6AEB idle  __psp
- 0000:6AED idle  __osmajor
- 0000:6AED idle  __version
- 0000:6AEE idle  __osminor
- 0000:6AEF idle  _errno
- 0000:6AF1 idle  __8087
- 0000:6AF3       __StartTime1
- 0000:6AF5       __StartTime2
- 0000:6AF7 idle  ___heapbase
- 0000:6AF9 idle  ___brklvl
- 0000:6AFC       _hextab
- 0000:6B16 idle  _MsgErro
- 0000:6C04 idle  _Label_MF
- 0000:6C08 idle  _Default_Label
- 0000:6C28       _CurDrv
- 0000:6C29 idle  _bootdrive
- 0000:6C2A       _CurProcess
- 0000:6D0E idle  _prompt1
- 0000:6D17 idle  _prompt2
- 0000:70EA idle  _MEM_End
- 0000:70EC idle  _MEM_Size
- 0000:70EE idle  _MEM_Start
- 0000:70F0 idle  _MEM_SearchNext
- 0000:70F2       _ERRO
- 0000:70F4 idle  _BootRecord
- 0000:70F8 idle  _BlocoControlo
- 0000:70FC idle  _Drive
- 0000:7140 idle  _OldCursor
- 0000:7142 idle  _OldKeyInt
- 0000:7146 idle  _Term_EscST
- 0000:7147 idle  _Term_EscS
- 0000:7148 idle  _Term_EscP
- 0000:714A idle  _Term_EscPi
- 0000:714B idle  _Term_Esc
- 0000:714C idle  _Term_Attr
- 0000:714D idle  _Term_Tabs
- 0000:714E idle  _Term_b
- 0000:714F idle  _Term_Bp
- 0000:7151 idle  _Term_BackBuffer
- 0000:7251 idle  _Term_Buffer
- 0000:7351 idle  _Term_KeyA
- 0000:7352 idle  _Term_KeyBuffer
- 0000:74B2 idle  _oldint1B
- 0000:74B6 idle  _oldint80
- 0000:74BA idle  _program
- 0000:74BE idle  _argumento
- 0000:753E idle  _comando
- 0000:754B idle  _input
+ 0000:11EF idle  _fsbaseCloseFs
+ 0000:120E idle  _fsbaseInitFs
+ 0000:12A4 idle  _fsbaseGetDriver
+ 0000:12E4 idle  _fsbaseGetDriverForFcb
+ 0000:135A idle  _Ler_Packed_Data
+ 0000:139A idle  _UnPacked_Data
+ 0000:13D2 idle  _Ler_Packed_Hora
+ 0000:1413 idle  _UnPacked_Hora
+ 0000:144B idle  _AlocaMemoria
+ 0000:148B idle  _LibertaMemoria
+ 0000:14B3 idle  _GetFreeBloco
+ 0000:14E0       _LerSector
+ 0000:15D0       _EscreverSector
+ 0000:16C0 idle  _LerSectorFisico
+ 0000:172C idle  _EscreverSectorFisico
+ 0000:1798 idle  _fsbaseFim_Ficheiro
+ 0000:1808 idle  _fsbaseFicheiro_Pos
+ 0000:1855 idle  _fsbaseFicheiro_Size
+ 0000:18A2 idle  _fsnDriveData
+ 0000:18BD idle  _fsnMontada
+ 0000:18E5 idle  _fsnEliminar
+ 0000:19DF idle  _fsnRenomear
+ 0000:1ADF idle  _fsnChmod
+ 0000:1B70 idle  _fsnGetAttr
+ 0000:1C02 idle  _GetEntrada
+ 0000:1CAD idle  _fsnCriarFicheiro
+ 0000:1E14 idle  _LibertaClusters
+ 0000:1E80 idle  _fsnMontarDrive
+ 0000:2253 idle  _fsnDesMontarDrive
+ 0000:22D6 idle  _GetFat
+ 0000:233A idle  _SetFat
+ 0000:23A8       _SyncDrive
+ 0000:24C3 idle  _AlocaCluster
+ 0000:257A idle  _ProcurarEntrada
+ 0000:25F0 idle  _NomeFicheiroCmp
+ 0000:262A idle  _SetNomeEntrada
+ 0000:2668 idle  _GetNomeEntrada
+ 0000:268C idle  _fsnAbrirFicheiro
+ 0000:2939 idle  _fsnBlocoEntrada
+ 0000:2990 idle  _VerificarAberto
+ 0000:29F5 idle  _fsnFecharFicheiro
+ 0000:2AFF idle  _fsnFlushFicheiro
+ 0000:2BD5 idle  _fsnEscreverCaracter
+ 0000:2FDF idle  _fsnEscreverFicheiro
+ 0000:344D idle  _fsnEscreverCluster
+ 0000:3514 idle  _fsnLerCluster
+ 0000:35DB idle  _fsnLerCaracter
+ 0000:380B idle  _fsnLerFicheiro
+ 0000:3B26 idle  _fsnPosicionarFicheiro
+ 0000:3D37 idle  _fsnTruncarFicheiro
+ 0000:3E68 idle  _fsnFreeClusters
+ 0000:3EC7 idle  _fsnFreeSpace
+ 0000:3F43 idle  _fsnDiskSpace
+ 0000:3FB1       _DirProcura
+ 0000:40FC idle  _fsnGetDriver
+ 0000:4106       _CriarFicheiro
+ 0000:4130       _Chmod
+ 0000:415B       _Renomear
+ 0000:4188       _Eliminar
+ 0000:41AF       _FecharFicheiro
+ 0000:41CD       _FlushFicheiro
+ 0000:41EB       _GetAttr
+ 0000:4216       _AbrirFicheiro
+ 0000:4246       _EscreverCaracter
+ 0000:426D       _LerCaracter
+ 0000:4290 idle  _EscreverCluster
+ 0000:42BA idle  _LerCluster
+ 0000:42E4       _PosicionarFicheiro
+ 0000:430E       _TruncarFicheiro
+ 0000:432C idle  _FreeClusters
+ 0000:434F       _FreeSpace
+ 0000:4374       _DiskSpace
+ 0000:4399       _Montada
+ 0000:43A9       _Fim_Ficheiro
+ 0000:43B7       _Ficheiro_Pos
+ 0000:43C5       _Ficheiro_Size
+ 0000:43D3       _LerFicheiro
+ 0000:4400       _EscreverFicheiro
+ 0000:442D idle  _FecharFicheirosDrive
+ 0000:447B       _FecharFicheirosProcesso
+ 0000:44A9       _MontarDrive
+ 0000:44DD       _DesMontarDrive
+ 0000:4508       _INITFS
+ 0000:4512       _CLOSEFS
+ 0000:4549       _Term_Flush
+ 0000:4553 idle  _Term_EdWr
+ 0000:45A9 idle  _Term_EdCF
+ 0000:45C7 idle  _Term_EdCB
+ 0000:45DE       _Get_Str
+ 0000:460D       _send_str
+ 0000:4632       _write_str
+ 0000:4650       _GetIntVect
+ 0000:468E       _SetIntVect
+ 0000:46C1       _Term_Init
+ 0000:4716       _Term_Done
+ 0000:472E idle  _Term_Edit
+ 0000:49FE       _Term_Input
+ 0000:4A38       _Term_Output
+ 0000:4AE6       _Char_Output
+ 0000:4B0A       _Char_TTOutput
+ 0000:4B26 idle  _Term_Cursor
+ 0000:4B68 idle  _Term_SetCursorPos
+ 0000:4B85 idle  _Term_GetCursorPos
+ 0000:4BB4 idle  _Term_GetVideoAttr
+ 0000:4BE6 idle  _Term_GetActivePage
+ 0000:4C10 idle  _Term_GetCols
+ 0000:4C2F idle  _Term_Cls
+ 0000:4C4F       _Term_ClearLine
+ 0000:4C9E idle  _Term_EscCod
+ 0000:4EB8 idle  _Term_EscInit
+ 0000:4ED6 idle  _Term_EscSP
+ 0000:4F03 idle  _Term_SetKeySend
+ 0000:4F53 idle  _Term_SetKeyInit
+ 0000:4F75       _Term_SetAttr
+ 0000:50D7       _ModoVideo
+ 0000:50E3 idle  _Term_SetModo
+ 0000:512D idle  _Term_CursorR
+ 0000:5165 idle  _Term_CursorL
+ 0000:5171 idle  _Term_CursorU
+ 0000:51A0 idle  _Term_CursorD
+ 0000:51AC idle  _Term_CursorF
+ 0000:51F4 idle  _Term_CursorB
+ 0000:523C idle  _NewKeyInt
+ 0000:5482       _System_Init
+ 0000:5522       _System_Done
+ 0000:5543 idle  _CtrlBreak
+ 0000:55CB       _kill_proc
+ 0000:5601 idle  _Exit_Process
+ 0000:5627 idle  _Callprg
+ 0000:5681 idle  _SetPSP
+ 0000:5798 idle  _Load
+ 0000:584D idle  _TestValidPrg
+ 0000:5880 idle  _TestValidPsp
+ 0000:58C7       _Run
+ 0000:5934 idle  _Dump
+ 0000:5997 idle  _getFreeDescriptor
+ 0000:59D0 idle  _setDescriptor
+ 0000:5A14 idle  _getDescriptorIdx
+ 0000:5A67 idle  _Open
+ 0000:5B75 idle  _Close
+ 0000:5BAA idle  _Flush
+ 0000:5BDF idle  _WriteChar
+ 0000:5C1F idle  _ReadChar
+ 0000:5C5A idle  _Read
+ 0000:5CA0 idle  _Write
+ 0000:5CE6 idle  _Seek
+ 0000:5D27 idle  _Truncate
+ 0000:5D5C idle  _Position
+ 0000:5D99 idle  _Size
+ 0000:5DD6 idle  _EndOfFile
+ 0000:5E0F idle  _Dispatcher
+ 0000:628C       _shell
+ 0000:629A idle  _getcmd
+ 0000:6452 idle  _set_keys
+ 0000:649D idle  _set_terminal
+ 0000:64FD idle  _Cls
+ 0000:650C idle  _ChDrive
+ 0000:658D idle  _MountDrive
+ 0000:6619 idle  _UnMountDrive
+ 0000:66CD idle  _Info
+ 0000:66E6 idle  _Help
+ 0000:66F5 idle  _Executar
+ 0000:6767 idle  _parse
+ 0000:67D6 idle  _Sync
+ 0000:6809 idle  _showprompt
+ 0000:682D idle  _Ls
+ 0000:6B31 idle  _strp
+ 0000:6B9A idle  _escreve_erro
+ 0000:6BC2 idle  _Ed
+ 0000:6C2E idle  _Type
+ 0000:6CFA idle  _DumpFile
+ 0000:7048 idle  _Mem
+ 0000:714C idle  _AMem
+ 0000:7169 idle  _FMem
+ 0000:7176       _exit
+ 0000:7186       _pong
+ 0000:71A0 idle  _dump_mem
+ 0000:71E6       _main
+ 0000:71FB idle  _SetupMemory
+ 0000:723F idle  __argc
+ 0000:7241 idle  __argv
+ 0000:7243 idle  _environ
+ 0000:7245 idle  __envLng
+ 0000:7247 idle  __envseg
+ 0000:7249 idle  __envSize
+ 0000:724B idle  __psp
+ 0000:724D idle  __osmajor
+ 0000:724D idle  __version
+ 0000:724E idle  __osminor
+ 0000:724F idle  _errno
+ 0000:7251 idle  __8087
+ 0000:7253       __StartTime1
+ 0000:7255       __StartTime2
+ 0000:7257 idle  ___heapbase
+ 0000:7259 idle  ___brklvl
+ 0000:725C       _hextab
+ 0000:7276 idle  _MsgErro
+ 0000:7364 idle  _Label_MF
+ 0000:7368 idle  _Default_Label
+ 0000:73A4 idle  _fsmounters
+ 0000:73B6       _CurDrv
+ 0000:73B7 idle  _bootdrive
+ 0000:73B8       _CurProcess
+ 0000:7520 idle  _prompt1
+ 0000:7529 idle  _prompt2
+ 0000:78FC idle  _MEM_End
+ 0000:78FE idle  _MEM_Size
+ 0000:7900 idle  _MEM_Start
+ 0000:7902 idle  _MEM_SearchNext
+ 0000:7904       _ERRO
+ 0000:7906 idle  _BootRecord
+ 0000:790A idle  _BlocoControlo
+ 0000:790E idle  _Drive
+ 0000:7928 idle  _OldCursor
+ 0000:792A idle  _OldKeyInt
+ 0000:792E idle  _Term_EscST
+ 0000:792F idle  _Term_EscS
+ 0000:7930 idle  _Term_EscP
+ 0000:7932 idle  _Term_EscPi
+ 0000:7933 idle  _Term_Esc
+ 0000:7934 idle  _Term_Attr
+ 0000:7935 idle  _Term_Tabs
+ 0000:7936 idle  _Term_b
+ 0000:7937 idle  _Term_Bp
+ 0000:7939 idle  _Term_BackBuffer
+ 0000:7A39 idle  _Term_Buffer
+ 0000:7B39 idle  _Term_KeyA
+ 0000:7B3A idle  _Term_KeyBuffer
+ 0000:7C9A idle  _oldint1B
+ 0000:7C9E idle  _oldint80
+ 0000:7CA2 idle  _program
+ 0000:7CA6 idle  _argumento
+ 0000:7D26 idle  _comando
+ 0000:7D33 idle  _input
 
 Program entry point at 0000:0000
 Warning: No stack

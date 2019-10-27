@@ -2,7 +2,7 @@
 CC=tcc
 CFLAGS=-mt
 
-SRCS=mcoslib.c fserror.c mcosmem.c fsystem.c mcosterm.c mcos.c mcshell.c mcosmain.c
+SRCS=mcoslib.c fserror.c mcosmem.c fs.c mcosterm.c mcos.c mcshell.c mcosmain.c
 
 OBJS=$(SRCS:.c=.obj)
 

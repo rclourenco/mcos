@@ -2,7 +2,7 @@
 #include "mcshell.h"
 #include "mcos.h"
 #include "mcoslib.h"
-#include "fsystem.h"
+#include "vfs.h"
 
 char input[256];
 char comando[13];
@@ -78,7 +78,7 @@ void set_terminal()
 	Term_Output(27);write_str("3h");
 	Term_Output(27);write_str("0m");
 	write_str("MicroComputer Operating System\n");
-	write_str(" Ver 1.00\n\n");
+	write_str(" Ver 1.01\n\n");
 	if(CurDrv>=0)
 	{
 		write_str("Work on Drive ");
@@ -179,7 +179,7 @@ void UnMountDrive()
 void Info()
 {
 	write_str("\nMicroComputer Operating System\n");
-	write_str(" MCOS 1.00\n\n");
+	write_str(" MCOS 1.01\n\n");
 }
 
 void Help()

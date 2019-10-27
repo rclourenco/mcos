@@ -1,7 +1,7 @@
 #ifndef _MCOSTERM_H
 
 #include "mcoslib.h"
-#include "fsystem.h"
+#include "vfs.h"
 
 #define TERM_KEYN 22
 #define TERM_KEYB 15
