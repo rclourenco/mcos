@@ -170,6 +170,7 @@ BYTE EscreverSector(BYTE drive,WORD sector,void far *buffer)
 	return (EscreverSectorFisico(drive,head,track,sect,buffer));
 }
 
+// TODO fix ch, cl values, check int 13h docs
 BYTE LerSectorFisico(char drive,char head,char track,char sector,char far *buffer)
 {
 	WORD entries=0;
@@ -203,6 +204,7 @@ BYTE LerSectorFisico(char drive,char head,char track,char sector,char far *buffe
 	return OK;
 }
 
+// TODO fix ch, cl values, check int 13h docs
 BYTE EscreverSectorFisico(char drive,char head,char track,char sector,char far *buffer)
 {
 	WORD entries=0;
@@ -269,5 +271,15 @@ DWORD fsbaseFicheiro_Size(WORD bloco)
 		return 0L;
 	}
 	return BlocoControlo[bloco]->Tamanho;
+}
+
+BYTE fsbaseMontada(BYTE drive)
+{
+	if(drive>=MAXDRIVES)
+	{
+		ERRO=EINVDRV;
+		return 0;
+	}
+	return Drive[drive].Montada;
 }
 

@@ -78,4 +78,6 @@ extern char CurDrv;
 extern char bootdrive;
 extern unsigned CurProcess;
 
+extern unsigned _StartTime1, _StartTime2;
+extern unsigned _BootUnit, _BootPartition;
 #endif

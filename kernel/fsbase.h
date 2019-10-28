@@ -25,6 +25,14 @@
 
 #define FILES 30
 
+typedef struct{
+	BYTE nome[13];
+	BYTE Attr;
+	TDATA Data;
+	THORA Hora;
+	DWORD Tamanho;
+}TDIR_RECORD;
+
 typedef struct {
 	void (*vCriarFicheiro)(BYTE drive,BYTE far *nome,BYTE attr);        //user
 	void (*vChmod)(BYTE drive,BYTE far *nome,BYTE attr);                //user
@@ -43,11 +51,12 @@ typedef struct {
 	WORD (*vFreeClusters)(BYTE drive);
 	DWORD (*vFreeSpace)(BYTE drive);                                       //user
 	DWORD (*vDiskSpace)(BYTE drive);                                       //user
-	BYTE (*vMontada)(BYTE drive);                                           //user
 	WORD (*vLerFicheiro)(WORD bloco, char far *ptr, WORD len); //user;
 	WORD (*vEscreverFicheiro)(WORD bloco, char far *ptr, WORD len); //user;
 
 	WORD (*vDesMontarDrive)(BYTE drive);
+	WORD (*vSyncDrive)(BYTE drive);
+	BYTE (*vDirProcura)(BYTE drive, TDIR_RECORD far *rec, BYTE first);
 } IFS;
 
 IFS *fsbaseGetDriver(BYTE drive);
@@ -116,5 +125,5 @@ WORD fsbaseInitFs();
 BYTE fsbaseFim_Ficheiro(WORD bloco);
 DWORD fsbaseFicheiro_Pos(WORD bloco);
 DWORD fsbaseFicheiro_Size(WORD bloco);
-
+BYTE fsbaseMontada(BYTE drive);
 #endif

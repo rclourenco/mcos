@@ -8,7 +8,7 @@ void Cls();
 void ChDrive();
 void MountDrive();
 void UnMountDrive();
-void Info();
+void Info(int l);
 void Help();
 void Executar();
 void getcmd();

@@ -57,9 +57,12 @@ STARTX          PROC    NEAR
 ;               Program Segment Prefix address
 ;               Environment address
 ;               Top of far heap
-    mov     ax,0FFF0h
-		mov     dx, cs          ; DX = GROUP Segment address
-		mov     ds, dx
+		mov     ax, cs          ; DX = GROUP Segment address
+		mov     ds, ax
+		mov 	byte ptr _BootUnit@, dl
+		mov 	byte ptr _BootPartition@, dh
+		mov dx, ax
+		mov ax, 0FFF0h
 		cli
 		mov     sp, ax
 		mov     ss, dx
@@ -380,7 +383,8 @@ PubSym@         errno,          <dw    0>,              __CDECL__
 PubSym@         _8087,          <dw    0>,              __CDECL__
 PubSym@         _StartTime1,    <dw    0>,            __CDECL__
 PubSym@         _StartTime2,    <dw    0>,            __CDECL__
-
+PubSym@         _BootUnit,      <db    0>,            __CDECL__
+PubSym@         _BootPartition  <db    0>,            __CDECL__
 
 ;       Memory management variables
 

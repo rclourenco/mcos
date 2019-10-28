@@ -18,14 +18,6 @@ typedef struct {
 	BYTE _reserved[9];
 }TDIR;
 
-typedef struct{
-	BYTE nome[13];
-	BYTE Attr;
-	TDATA Data;
-	THORA Hora;
-	DWORD Tamanho;
-}TDIR_RECORD;
-
 typedef struct {
 	BYTE SectorCluster;
 	WORD FATSector;
@@ -43,18 +35,9 @@ typedef struct {
 
 WORD fsnMontarDrive(BYTE drive);                                 //user
 WORD fsnDesMontarDrive(BYTE drive);                              //user
-WORD GetFat(BYTE drive,WORD ParentCluster);                      // internal
-void SetFat(BYTE drive,WORD ParentCluster,WORD Cluster);         // internal
-WORD SyncDrive(BYTE drive);                                      //user
-WORD AlocaCluster(BYTE drive);
-WORD ProcurarEntrada(BYTE far *nome,BYTE drive);
-BYTE NomeFicheiroCmp(BYTE far *fnome,BYTE far *nome);
-void SetNomeEntrada(BYTE far *fnome,BYTE far *nome);
-void GetNomeEntrada(BYTE far *fnome,BYTE far *nome);
-void LibertaClusters(BYTE drive,WORD cluster);
+WORD fsnSyncDrive(BYTE drive);                                      //user
 void fsnCriarFicheiro(BYTE drive,BYTE far *nome,BYTE attr);        //user
-WORD GetEntrada(BYTE drive,BYTE first);
-BYTE DirProcura(BYTE drive,TDIR_RECORD far *rec,BYTE first);    //user
+BYTE fsnDirProcura(BYTE drive,TDIR_RECORD far *rec,BYTE first);    //user
 void fsnChmod(BYTE drive,BYTE far *nome,BYTE attr);                //user
 void fsnRenomear(BYTE drive,BYTE far *nome,BYTE far *novo_nome);   //user
 void fsnEliminar(BYTE drive,BYTE far *nome);                       //user
@@ -62,7 +45,6 @@ void fsnFecharFicheiro(WORD bloco);                                //user
 void fsnFlushFicheiro(WORD bloco);                                 //user
 BYTE fsnGetAttr(BYTE drive,BYTE far *nome);                        //user
 WORD fsnAbrirFicheiro(BYTE drive,BYTE far *nome,BYTE modo);        //user
-BYTE VerificarAberto(TDIR far *entrada);
 WORD fsnEscreverCaracter(WORD bloco,BYTE caracter);                //user
 WORD fsnLerCaracter(WORD bloco);                                   //user
 void fsnEscreverCluster(BYTE drive,WORD cluster,BYTE far *buffer);

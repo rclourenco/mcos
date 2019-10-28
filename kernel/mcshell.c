@@ -10,6 +10,7 @@ char argumento[128];
 char prompt1[]="[MCOS]$ ";
 char prompt2[]="[MCOS A:]$ ";
 
+void Debug();
 
 
 void shell()
@@ -38,7 +39,9 @@ void getcmd()
 		else if(!Strcmp(comando,"!unmount"))
 			UnMountDrive();
 		else if(!Strcmp(comando,"!info"))
-			Info();
+			Info(0);
+		else if(!Strcmp(comando,"!xinfo"))
+			Info(1);
 		else if(!Strcmp(comando,"!help"))
 			Help();
 		else if(!Strcmp(comando,"!ls"))
@@ -57,6 +60,8 @@ void getcmd()
 			DumpFile();
 		else if(!Strcmp(comando,"!sync"))
 			Sync();
+		else if(!Strcmp(comando,"!debug"))
+			Debug();
 		else if(comando[0]) Executar();
 	}
 }
@@ -176,10 +181,193 @@ void UnMountDrive()
 	}
 }
 
-void Info()
+void Info(int l)
 {
 	write_str("\nMicroComputer Operating System\n");
 	write_str(" MCOS 1.01\n\n");
+	if (l>0) {
+		char out[30];
+		unsigned long stime = (_StartTime1 << 16L) | _StartTime2;
+		write_str("StartTime: ");
+		_ultoa(stime, out ,3, 12);
+		write_str(out);
+	        write_str("\n Boot Unit: ");
+		_ultoa(_BootUnit, out, 3, 5);
+	       	write_str(out);
+		write_str("\n");
+	}
+}
+
+char *token(char **str_in)
+{
+	char *c;
+	if (*str_in==NULL)
+		return NULL;
+
+	while((**str_in)==' ')
+		(*str_in)++;
+
+	if ((**str_in)=='\0')
+		return NULL;
+
+	c = *str_in;
+
+	while ((**str_in)!=' ' && (**str_in)!='\0')
+		(*str_in)++;
+	if (**str_in==' ') {
+		**str_in='\0';
+		(*str_in)++;
+	}
+	return c;
+}
+
+void DumpMem(WORD seg, WORD ofs, DWORD max);
+
+void debug_mem(int argc, char **argv)
+{
+	char *addr;
+	WORD seg = 0;
+	WORD ofs = 0;
+	char out[30];
+
+	if (argc<2) {
+		write_str("Sintaxe: ");
+		write_str(comando);
+		write_str(" ");
+		write_str(argv[0]);
+		write_str(" ");
+		write_str("<segment_hex>:<offset_hex>\n");
+		return;
+	}
+
+	addr = argv[1];
+
+	while(*addr != '\0' && *addr!=':') {
+		if (seg>0xFFF) {
+			write_str("Out of range segment\n");
+			return;
+		}
+		if (*addr>='0' && *addr<='9')
+			seg = seg*16+(*addr)-'0';
+		else if(*addr>='a' && *addr<='f')
+			seg = seg*16+((*addr)-'a'+10);
+		else if(*addr>='A' && *addr<='F')
+			seg = seg*16+((*addr)-'A'+10);
+		else {
+			write_str("Invalid character at segment\n");
+			return;
+		}
+		addr++;
+	}
+
+	if (*addr=='\0') {
+		write_str("Missing offset\n");
+		return;
+	}
+
+	addr++; //skip :
+	while(*addr!='\0') {
+		if (ofs>0xFFF) {
+			write_str("Out of range segment\n");
+			return;
+		}
+		if (*addr>='0' && *addr<='9')
+			ofs = ofs*16+(*addr)-'0';
+		else if(*addr>='a' && *addr<='f')
+			ofs = ofs*16+((*addr)-'a'+10);
+		else if(*addr>='A' && *addr<='F')
+			ofs = ofs*16+((*addr)-'F'+10);
+		else {
+			write_str("Invalid character at offset\n");
+			return;
+		}
+		addr++;
+	}
+
+	write_str("Segment: ");	_ultoa(seg,out,3,8); write_str(out); write_str("\n");
+	write_str("Offset:  "); _ultoa(ofs,out,3,8); write_str(out); write_str("\n");
+
+	DumpMem(seg, ofs, 0x10000L);
+}
+
+WORD atod(char *num)
+{
+	WORD n=0;
+	while(*num!='\0') {
+		write_str(num);
+		if (n>10000)
+			break;
+		if( *num>='0' && *num<='9') {
+			n=n*10+(*num-'0');
+		}
+		else {
+			break;
+		}
+		num++;
+	}
+	return n;
+}
+void debug_disk(int argc, char **argv)
+{
+	unsigned seg;
+
+	WORD drive, c, h, s;
+	if (argc<5) {
+		write_str("Sintaxe: ");
+		write_str(comando);
+		write_str(" ");
+		write_str(argv[0]);
+		write_str(" ");
+		write_str("<bios_drive> <c> <h> <s>\n");
+		return;
+	}
+
+	write_str("Go...\n");
+
+	drive=atod(argv[1]);
+	c=atod(argv[2]);
+	h=atod(argv[3]);
+	s=atod(argv[4]);
+
+	write_str("Go...\n");
+	Aloca_Segmento(0x40,8,&seg);
+        if (!seg)
+		return;
+
+	// HCS
+	if(!LerSectorFisico(drive, h,c,s, (char far *)MK_FP(seg, 0))) {
+		write_str("Drive error\n");
+		return;
+	}
+	DumpMem(seg, 0, 0x200);
+	Liberta_Segmento(seg);
+}
+
+void Debug()
+{
+	char *str_p = argumento;
+	char *argv[10];
+	int argc=0;
+	int i;
+	char *cur;
+	while ( argc < 10 && (cur=token(&str_p))!=NULL ) {
+		argv[argc++]=cur;
+	}
+
+	for (i=0;i<argc;i++) {
+		write_str("Arg: ");
+		write_str(argv[i]);
+		write_str("\n");	
+	}
+
+	if (argc<1)
+		return;
+	if (!Strcmp(argv[0], "mem")) {
+		debug_mem(argc, argv);
+	}
+	else if(!Strcmp(argv[0], "disk")) {
+		debug_disk(argc, argv);
+	}
 }
 
 void Help()
@@ -553,6 +741,145 @@ void DumpFile()
 		escreve_erro();
 }
 
+void DumpMem(WORD seg, WORD ofs, DWORD max)
+{
+	WORD ch;
+	WORD lines;
+	WORD cols;
+	WORD offset,old_offset;
+	DWORD fpos=ofs;
+	BYTE h1,h2,h3,h4;
+	BYTE lb[DUMPCOLS+1];
+	int s=0;
+	lines=0;
+	cols=0;
+	offset=0;
+	do {
+		WORD k;
+		lines=0;
+		cols=0;
+		offset=fpos;
+		old_offset=offset;
+		while(!s && fpos<max)
+		{
+			if(offset%DUMPCOLS==0) {
+				write_str(" ");
+				h1 = (seg>>12)&0xF;
+				h2 = (seg>>8)&0xF;
+				h3 = (seg>>4)&0xF;
+				h4 = (seg>>0)&0xF;
+				Term_Output(hextab[h1]);
+				Term_Output(hextab[h2]);
+				Term_Output(hextab[h3]);
+				Term_Output(hextab[h4]);
+				write_str(":");
+				h1 = (offset>>12)&0xF;
+				h2 = (offset>>8)&0xF;
+				h3 = (offset>>4)&0xF;
+				h4 = (offset>>0)&0xF;
+				Term_Output(hextab[h1]);
+				Term_Output(hextab[h2]);
+				Term_Output(hextab[h3]);
+				Term_Output(hextab[h4]);
+				write_str(" ");
+			}
+			ch=peekb(seg, fpos);
+			fpos++;	
+			if(ch<32 || ch>126 ){
+				lb[cols]='.';
+			} else {
+				lb[cols]=ch; 
+			}
+
+			h1 = (ch>>4)&0xF;
+			h2 = ch&0xF;
+			Term_Output(hextab[h1]);
+			Term_Output(hextab[h2]);
+			Term_Output(' ');
+			cols++;
+			if(cols==DUMPCOLS/2) {
+				write_str("- ");
+			}
+			else if(cols==DUMPCOLS) {
+				lb[cols]=0;
+				write_str("  ");
+				write_str(lb);
+				Term_Output(10);
+				lines++;
+				if(lines==24) {
+					Term_SetAttr(7);
+					write_str("Press a key to continue...");
+					Term_SetAttr(7);
+					k=GetKey();
+					Term_ClearLine();
+					lines=0;
+					switch(k)
+					{
+						case 0x011B: s=1; break;
+						case 0x4800: 
+							if(offset>DUMPCOLS*48) {
+								fpos-=DUMPCOLS*48;
+							} else {
+								fpos=0;
+							}
+							offset=fpos-1;
+							break;
+					}
+					if(s) break;
+				}
+				cols=0;
+			}
+			offset++;
+		}
+
+		if(cols) {
+			int i;
+			lb[cols]=0;
+			for(i=0;i<DUMPCOLS-cols;i++)
+				write_str("   ");
+			if(cols<DUMPCOLS/2) {
+				write_str("    ");
+			}
+			else {
+				write_str("  ");
+			}
+			write_str(lb);
+			Term_Output(10);
+		}
+		Term_SetAttr(7);
+		write_str("   END    ");
+		Term_SetAttr(7);
+		k=GetKey();
+		Term_ClearLine();
+		do {
+			switch(k)
+			{
+				case 0x011B: s=1; break;
+				case 0x4800:
+					offset=fpos;
+		
+					if(offset%(DUMPCOLS*24)) {
+						offset=-DUMPCOLS*23-offset%(DUMPCOLS*24);
+					}
+					else {
+						offset=-DUMPCOLS*24;
+					}
+
+					if(fpos>offset) {
+						fpos-=offset;
+					} else {
+						fpos=0;
+					}
+				break;
+			}
+			if(s) break;
+			k=GetKey();
+			offset=fpos;
+		}while(offset==old_offset);
+
+	} while(!s);
+
+}
 
 void Mem()
 {

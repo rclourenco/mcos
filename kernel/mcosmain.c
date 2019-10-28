@@ -12,7 +12,6 @@ void SetupMemory();
 
 extern void _ping(void);
 
-extern unsigned _StartTime1, _StartTime2;
 
 void exit(int c)
 {

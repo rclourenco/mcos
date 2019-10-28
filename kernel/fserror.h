@@ -1,7 +1,7 @@
 #ifndef _FSERROR_H
  #define _FSERROR_H
  
-#define NUMERROS 11
+#define NUMERROS 13
 //sem erros
 #define EZERO 0
 //acesso nao permitido
@@ -24,7 +24,10 @@
 #define ENOFILE 9
 //Nome de ficheiro invalido
 #define EINVFILE 10
-
+//Invalid filesystem
+#define EINVFS   11
+//Function unsuported
+#define EUNSUP   12
 
 extern char far *MsgErro[NUMERROS];
 char far *GetMsgErro(unsigned int erro);

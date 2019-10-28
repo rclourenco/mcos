@@ -114,7 +114,7 @@ DWORD DiskSpace(BYTE drive)
 
 BYTE Montada(BYTE drive)
 {
-	return fs_native.vMontada(drive);
+	return fsbaseMontada(drive);
 }
 
 BYTE Fim_Ficheiro(WORD bloco)
@@ -176,6 +176,8 @@ WORD MontarDrive(BYTE drive)
 		WORD r = fsmounters[i](drive);
 		if (r)
 			return r;
+		if (ERRO!=EINVFS) // other error, so skip
+			return 0;
 		i++;
 	}
 	return 0;
@@ -202,5 +204,19 @@ void CLOSEFS()
 		if(Drive[cont].Montada)
 			DesMontarDrive(cont);
 	fsbaseCloseFs();
+}
+
+WORD SyncDrive(BYTE drive)
+{
+	DRIVERFOR(drive, 0)
+
+	return ifsd->vSyncDrive(drive);
+}
+
+BYTE DirProcura(BYTE drive, TDIR_RECORD far *rec, BYTE first)
+{
+	DRIVERFOR(drive, 0)
+
+	return ifsd->vDirProcura(drive, rec, first);
 }
 
