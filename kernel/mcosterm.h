@@ -59,5 +59,6 @@ void Term_EdWr(unsigned char ol);
 void Term_Flush();               //user
 void send_str(char far *s);                          //user
 void write_str(char far *s);                         //user
+void term_printf(char *str, ...);
 
 #endif

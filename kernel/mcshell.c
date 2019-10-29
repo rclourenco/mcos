@@ -294,7 +294,6 @@ WORD atod(char *num)
 {
 	WORD n=0;
 	while(*num!='\0') {
-		write_str(num);
 		if (n>10000)
 			break;
 		if( *num>='0' && *num<='9') {
@@ -307,6 +306,7 @@ WORD atod(char *num)
 	}
 	return n;
 }
+
 void debug_disk(int argc, char **argv)
 {
 	unsigned seg;
@@ -343,6 +343,130 @@ void debug_disk(int argc, char **argv)
 	Liberta_Segmento(seg);
 }
 
+// assuming little endian
+struct {
+	BYTE size;
+	BYTE res;
+	WORD read_number;
+	WORD read_offset;
+	WORD read_seg;
+	WORD sector_w1;
+	WORD sector_w2;
+	WORD sector_w3;
+	WORD sector_w4;
+} dap = {
+	16, // size
+	0,  // res
+	1,  // read_number
+	0,  // seg
+	0,  // off
+	0,  // sw1
+	0,  // sw2
+	0,  // sw3
+	0   // sw4
+};
+
+void debug_disk3(int argc, char **argv)
+{
+	unsigned seg;
+	unsigned dap_ofs = FP_OFF(&dap);
+	unsigned retv;
+
+	WORD drive, lba;
+	if (argc<3) {
+		write_str("Sintaxe: ");
+		write_str(comando);
+		write_str(" ");
+		write_str(argv[0]);
+		write_str(" ");
+		write_str("<bios_drive> <lba_sector>\n");
+		return;
+	}
+
+	drive=atod(argv[1]);
+	lba=atod(argv[2]);
+
+	term_printf("Drive: %d %d %d %d\n", drive, sizeof(dap), dap_ofs, &dap);
+	dap.sector_w1 = lba;
+
+	write_str("Go...\n");
+	Aloca_Segmento(0x40,8,&seg);
+
+	if (!seg)
+		return;
+
+	dap.read_seg = seg;
+	dap.read_offset = 0;
+	
+	asm {
+		mov ah, 0x42;
+		mov dl, byte ptr drive;
+		push si;
+		mov si, word ptr dap_ofs;
+		int 0x13;
+		pop si;
+		mov byte ptr retv, ah;
+		jnc ok;
+	}
+	retv |= 0x100;
+ok:
+
+
+	if ((retv&0x100)==0)
+		DumpMem(seg, 0, 0x200);
+	else
+		term_printf("Status: %d\n", retv&0xFF);
+
+	Liberta_Segmento(seg);
+
+	
+}
+
+void debug_disk2(int argc, char **argv)
+{
+	unsigned seg;
+	BYTE status;
+	BYTE cmos_drive_type;
+	BYTE cylinders;
+	BYTE track_sectors;
+	BYTE nsides;
+	BYTE ndrives;
+	WORD rcylinders;
+	WORD drive;
+	if (argc<2) {
+		write_str("Sintaxe: ");
+		write_str(comando);
+		write_str(" ");
+		write_str(argv[0]);
+		write_str(" ");
+		write_str("<bios_drive>\n");
+		return;
+	}
+
+	write_str("Go...\n");
+
+	drive=atod(argv[1]);
+
+	asm {
+		mov ah, 0x8;
+		mov dl, byte ptr drive;
+		int 0x13;
+		mov status, ah;
+		mov cmos_drive_type, bl;
+		mov cylinders, ch;
+		mov track_sectors, cl;
+		mov nsides, dh;
+		mov ndrives, dl;
+	}
+
+	term_printf("Drive %d Status %x CmosDriveType %x\n", drive, status, cmos_drive_type);
+	rcylinders = ((track_sectors & 0xC0)<<2) | cylinders;
+	track_sectors &= 0x3F;
+	term_printf("C: %u H: %u S: %u \n", rcylinders+1, nsides+1, track_sectors);
+	term_printf("NDrives: %d\n", ndrives);
+}
+
+
 void Debug()
 {
 	char *str_p = argumento;
@@ -367,6 +491,12 @@ void Debug()
 	}
 	else if(!Strcmp(argv[0], "disk")) {
 		debug_disk(argc, argv);
+	}
+	else if(!Strcmp(argv[0], "disk2")) {
+		debug_disk2(argc, argv);
+	}
+	else if(!Strcmp(argv[0], "disk3")) {
+		debug_disk3(argc, argv);
 	}
 }
 

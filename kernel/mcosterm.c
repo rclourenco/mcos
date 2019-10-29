@@ -716,3 +716,95 @@ void interrupt far NewKeyInt(void)
 	}
 	
 }
+
+
+//char hextab[20] = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F','X','X','X','X'};
+
+void write_hex(unsigned d)
+{
+  char t[5];
+  t[0] = ((d & 0xF000)>>12);
+  t[1] = ((d & 0x0F00)>>8);
+  t[2] = ((d & 0x00F0)>>4);
+  t[3] = (d & 0x000F);
+  t[4] = '\0';
+
+  t[0]=hextab[t[0]];
+  t[1]=hextab[t[1]];
+  t[2]=hextab[t[2]];
+  t[3]=hextab[t[3]];
+  write_str(t);
+}
+
+
+void write_num(unsigned d)
+{
+  char t[6];
+  t[0] = (d/10000)%10+'0';
+  t[1] = (d/1000)%10+'0';
+  t[2] = (d/100)%10+'0';
+  t[3] = (d/10)%10+'0';
+  t[4] = d%10+'0';
+  t[5] = '\0';
+
+  write_str(t);
+}
+
+
+void write_longnum(unsigned long d)
+{
+  char t[11];
+  t[0] = (d/1000000000L)%10+'0';
+  t[1] = (d/100000000L)%10+'0';
+  t[2] = (d/10000000L)%10+'0';
+  t[3] = (d/1000000L)%10+'0';
+  t[4] = (d/100000L)%10+'0';
+  t[5] = (d/10000L)%10+'0';
+  t[6] = (d/1000L)%10+'0';
+  t[7] = (d/100L)%10+'0';
+  t[8] = (d/10L)%10+'0';
+  t[9] = d%10+'0';
+  
+  t[10] = '\0';
+
+  write_str(t);
+}
+
+void term_printf(char *str,...)
+{
+  int st=0;
+  int far *ptr = (int far *)&str;
+  ptr++;
+  while(*str) {
+    switch(st) {
+      case 0: if( *str=='%' ) {
+                st=1;
+              }
+              else {
+             	Term_Output(*str);
+              }
+      break;
+      case 1:
+        switch(*str) {
+          case '%': Term_Output('%'); break;
+          case 'x':
+          case 'X': write_hex(*ptr); ptr++;
+            break;
+          case 'd':
+          case 'i':
+          case 'u': write_num(*ptr); ptr++;
+            break;
+          case 'c': Term_Output(*ptr); ptr++;
+			break;
+		  case 's': write_str((char *)*ptr); ptr++; break;
+		  case 'S':
+			write_str((char far *)MK_FP(*(ptr+1),*ptr)); ptr++; ptr++;
+        }
+        st=0;
+      break;
+    }
+    str++;
+  }
+}
+
+

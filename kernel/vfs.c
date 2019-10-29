@@ -4,6 +4,7 @@ typedef WORD (*FSMounter)(BYTE drive);
 
 FSMounter fsmounters[] = {
 	fsnMontarDrive,
+	fsext2MontarDrive,
 	NULL,
 };
 
