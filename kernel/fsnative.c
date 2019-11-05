@@ -1,6 +1,7 @@
 #include "fserror.h"
 #include "fsnative.h"
 #include "mcosmem.h"
+#include "mcoslib.h"
 
 WORD fsniGetFat(BYTE drive,WORD ParentCluster);                      // internal
 void fsniSetFat(BYTE drive,WORD ParentCluster,WORD Cluster);         // internal
@@ -259,22 +260,8 @@ WORD fsnMontarDrive(BYTE drive)
 	FSN_DATA far *dd;
 
 	ERRO=FALSE;
-	if(!(drive<MAXDRIVES))
-	{
-		ERRO=EINVDRV;
-		return 0;
-	}
-	if(Drive[drive].Montada)
-	{
-		ERRO=EINVDRV;
-		return 0;
-	}
-	if(!(LerSectorFisico(drive,0,0,1,(char far *)BootRecord)))
-	{
-		ERRO=EINOUT;
-		return 0;
-	}
-	bootid=BootRecord->Fsid;
+
+	bootid=(BYTE far *)&(Drive[drive].FsID);
 	if((bootid[0]!='M')||(bootid[1]!='C')||(bootid[2]!='F')||
 		(bootid[3]!='S')||(bootid[4]!='0')||(bootid[5]!='0'))
 	{
@@ -289,11 +276,6 @@ WORD fsnMontarDrive(BYTE drive)
 		ERRO=EMEM;
 		return 0;
 	}
-
-	Drive[drive].TamSector=BootRecord->Bps;
-	Drive[drive].SectorPista=BootRecord->Spp;
-	Drive[drive].Heads=BootRecord->Hn;
-	Drive[drive].NSectors=BootRecord->Lsn;
 
 	dd->SectorCluster=BootRecord->Spc;
 	dirsect=((BootRecord->Rde)*32)/Drive[drive].TamSector;

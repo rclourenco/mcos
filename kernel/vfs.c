@@ -5,7 +5,7 @@ typedef WORD (*FSMounter)(BYTE drive);
 FSMounter fsmounters[] = {
 	fsnMontarDrive,
 	fsext2MontarDrive,
-	NULL,
+	NULL
 };
 
 #define DRIVERFOR(unit, ret) IFS *ifsd=fsbaseGetDriver(unit); if (!ifsd) return ret;
@@ -173,6 +173,16 @@ void FecharFicheirosProcesso(WORD procid)
 WORD MontarDrive(BYTE drive)
 {
 	int i=0;
+
+	if (drive > MAXDRIVES)
+		return 0;
+
+	if (Drive[drive].Montada)
+		return 1;
+
+	if (!fsbaseMount(drive))
+		return 0;
+
 	while(fsmounters[i]) {
 		WORD r = fsmounters[i](drive);
 		if (r)

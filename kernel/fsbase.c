@@ -8,6 +8,8 @@ TFCB far * far *BlocoControlo;
 BOOTRECORD far *BootRecord;
 WORD ERRO;
 
+BYTE GetDriveParams(BYTE drive, DRIVE_PARAM *dp);
+
 void ApagaErro()
 {
 	ERRO=0;
@@ -146,48 +148,157 @@ WORD GetFreeBloco()
 	return 0xFFFF;
 }
 
+BYTE fsbaseMount(BYTE drive)
+{
+	int i;
+	BYTE r;
+	r = GetDriveParams(drive, &(Drive[drive].p));
+	if (!r) {
+		kprintf("Drive params FAIL!\r\n");
+
+		ERRO=EINVDRV;
+		return 0;
+	}
+
+	kprintf("Drive params OK!\r\n");
+	kprintf("SectorsTrack: %u\r\n", Drive[drive].p.SectorsPista);
+	kprintf("Heads: %u\r\n", Drive[drive].p.Heads);
+	kprintf("Drive params OK!\r\n");
+
+	//WORD bootid;
+	if(!(LerSectorFisico(drive,0,0,1,(char far *)BootRecord)))
+	{
+		ERRO=EINOUT;
+		return 0;
+	}
+
+	kprintf("Bootrecord OK!\r\n");
+
+	for(i=0;i<6;i++) {
+		kprintf("%c",  BootRecord->Fsid[i]);
+		Drive[drive].FsID[i] =  BootRecord->Fsid[i];
+	}
+
+	kprintf("\r\n");
+	Drive[drive].TamSector = 512;
+
+	return 1;
+}
+
+BYTE GetDriveParams(BYTE drive, DRIVE_PARAM *dp)
+{
+	BYTE status;
+	BYTE cmos_drive_type;
+	BYTE cylinders;
+	BYTE track_sectors;
+	BYTE nsides;
+	BYTE ndrives;
+	WORD rcylinders;
+	BYTE r = 0;
+	WORD pseg;
+	WORD pofs;
+	asm {
+		push es;
+		push di;
+		mov ah, 0x8;
+		mov dl, byte ptr drive;
+		int 0x13;
+		mov status, ah;
+		jc error;
+	
+		mov ax, es;
+		mov pseg, ax;
+		mov pofs, di;
+
+		mov cmos_drive_type, bl;
+		mov cylinders, ch;
+		mov track_sectors, cl;
+		mov nsides, dh;
+		mov ndrives, dl;
+		mov r, 1;
+	}
+error:
+	asm {
+		pop di;
+		pop es;
+	}
+
+	rcylinders = ((track_sectors & 0xC0)<<2) | cylinders;
+	track_sectors &= 0x3F;
+
+	dp->SectorsPista = track_sectors;
+	dp->Heads = nsides+1;
+	dp->Tracks = rcylinders+1;
+	dp->BytesSector = 512;
+	dp->TotalSectors = dp->SectorsPista*dp->Heads*dp->Tracks;
+
+	return r;
+}
+
 BYTE LerSector(BYTE drive,WORD sector,void far *buffer)
 {
-	int head,track,sect;
+	WORD head,track,sect,r;
+	DRIVE_PARAM *p;
+	/*
 	if((Drive[drive].Montada==FALSE)||(drive>=MAXDRIVES))
 		return 0;
-	if(sector>=Drive[drive].NSectors) return 0;
-	sect=sector%Drive[drive].SectorPista+1;
-	head=(sector/Drive[drive].SectorPista)%Drive[drive].Heads;
-	track=(sector/Drive[drive].SectorPista)/Drive[drive].Heads;
+	*/
+	p = &(Drive[drive].p);
+
+	if(sector>=p->TotalSectors) return 0;
+
+	r=sector/p->SectorsPista;
+	sect=sector%p->SectorsPista+1;
+	head=r%p->Heads;
+	track=r/p->Heads;
 	return (LerSectorFisico(drive,head,track,sect,buffer));
 }
 
 BYTE EscreverSector(BYTE drive,WORD sector,void far *buffer)
 {
-	int head,track,sect;
+	WORD head,track,sect,r;
+	DRIVE_PARAM *p;
+
 	if((Drive[drive].Montada==FALSE)||(drive>=MAXDRIVES))
 		return 0;
-	if(sector>=Drive[drive].NSectors) return 0;
-	sect=sector%Drive[drive].SectorPista+1;
-	head=(sector/Drive[drive].SectorPista)%Drive[drive].Heads;
-	track=(sector/Drive[drive].SectorPista)/Drive[drive].Heads;
+
+	p = &(Drive[drive].p);
+
+	if(sector>=p->TotalSectors) return 0;
+
+	r=sector/p->SectorsPista;
+	sect=sector%p->SectorsPista+1;
+	head=r%p->Heads;
+	track=r/p->Heads;
 	return (EscreverSectorFisico(drive,head,track,sect,buffer));
 }
 
-// TODO fix ch, cl values, check int 13h docs
-BYTE LerSectorFisico(char drive,char head,char track,char sector,char far *buffer)
+BYTE LerSectorFisico(BYTE drive, WORD head, WORD track, WORD sector, char far *buffer)
 {
-	WORD entries=0;
+	WORD retries=0;
 	BYTE OK=0;
+	BYTE c,h,s;
+
 	int segb=FP_SEG(buffer),ofsb=FP_OFF(buffer);
 	char r;
-	if(drive>=MAXDRIVES)
+	if (drive>=MAXDRIVES)
 		return 0;
 
-	while((entries<NENTRIES)&&(!OK))
+	if (head>255 || track>1023 || sector > 63)
+		return 0;
+	
+	s = sector | ((track&0x300)>>2);
+	c = track & 0xFF;
+	h = head;
+
+	while((retries<NRETRIES)&&(!OK))
 	{
 		asm{
 			mov ah,0x2;
 			mov al,0x1;
-			mov ch,track;
-			mov cl,sector;
-			mov dh,head;
+			mov ch,c;
+			mov cl,s;
+			mov dh,h;
 			mov dl,drive;
 			mov es,segb;
 			mov bx,ofsb;
@@ -199,28 +310,35 @@ BYTE LerSectorFisico(char drive,char head,char track,char sector,char far *buffe
 		done:
 		if(!r)
 			OK=1;
-		entries++;
+		retries++;
 	}
 	return OK;
 }
 
-// TODO fix ch, cl values, check int 13h docs
-BYTE EscreverSectorFisico(char drive,char head,char track,char sector,char far *buffer)
+BYTE EscreverSectorFisico(BYTE drive,WORD head,WORD track,WORD sector,char far *buffer)
 {
-	WORD entries=0;
+	WORD retries=0;
 	int segb=FP_SEG(buffer),ofsb=FP_OFF(buffer);
 	char r;
+	BYTE c,h,s;
 	BYTE OK=0;
 	if(drive>=MAXDRIVES)
 		return 0;
-	while((entries<NENTRIES)&&(!OK))
+	if (head>255 || track>1023 || sector > 63)
+		return 0;
+	
+	s = sector | ((track&0x300)>>2);
+	c = track & 0xFF;
+	h = head;
+
+	while((retries<NRETRIES)&&(!OK))
 	{
 		asm{
 			mov ah,0x3;
 			mov al,0x1;
-			mov ch,track;
-			mov cl,sector;
-			mov dh,head;
+			mov ch,c;
+			mov cl,s;
+			mov dh,h;
 			mov dl,drive;
 			mov es,segb;
 			mov bx,ofsb;
@@ -232,7 +350,7 @@ BYTE EscreverSectorFisico(char drive,char head,char track,char sector,char far *
 		done:
 		if(!r)
 			OK=1;
-		entries++;
+		retries++;
 	}
 	return OK;
 }

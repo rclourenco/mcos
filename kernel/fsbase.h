@@ -21,7 +21,7 @@
 #define FALSE 0
 #define TRUE 1
 
-#define NENTRIES 3
+#define NRETRIES 3
 
 #define FILES 30
 
@@ -88,18 +88,27 @@ typedef struct {
 	DWORD Inode;
 	BYTE Modo;
 	BYTE far *Buffer;
+	void far *fsd;
 	WORD Procid;
 }TFCB;
 
 typedef struct {
+	WORD SectorsPista;
+	WORD Heads;
+	WORD Tracks;
+	WORD BytesSector;
+	DWORD TotalSectors;
+}DRIVE_PARAM;
+
+typedef struct {
 	BYTE Montada;
 	WORD TamSector;
-	BYTE SectorPista;
-	BYTE Heads;
-	WORD NSectors;
+	DRIVE_PARAM p;
+	BYTE FsID[6];
 	IFS *ifsdriver;
 	void far *fs_data;
 }TDRIVE;
+
 
 extern TDRIVE Drive[MAXDRIVES];
 extern TFCB far * far *BlocoControlo;
@@ -117,8 +126,8 @@ void fsbaseCloseFs();
 WORD GetFreeBloco();
 BYTE LerSector(BYTE drive,WORD sector,void far *buffer);      //user
 BYTE EscreverSector(BYTE drive,WORD sector,void far *buffer); //user
-BYTE LerSectorFisico(char drive,char head,char track,char sector,char far *buffer);
-BYTE EscreverSectorFisico(char drive,char head,char track,char sector,char far *buffer);
+BYTE LerSectorFisico(BYTE drive ,WORD head,WORD track,WORD sector,char far *buffer);
+BYTE EscreverSectorFisico(BYTE drive,WORD head,WORD track,WORD sector,char far *buffer);
 
 void fsbaseCloseFs();
 WORD fsbaseInitFs();
