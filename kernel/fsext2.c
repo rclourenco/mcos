@@ -6,6 +6,7 @@ int fsext2iGetInode(BYTE drive, DWORD inode, FSEXT2_INODE far *p);
 WORD fsext2OpenByInode(BYTE drive, DWORD inode, BYTE modo);
 int fsext2LoadCluster(WORD bloco, DWORD *o, DWORD *r);
 BYTE fsext2iReadBlock(BYTE drive, DWORD block, BYTE far *buffer);
+DWORD fsext2iFindFile(BYTE drive, char far *name);
 
 
 FSEXT2_DATA far * fsext2DriveData(BYTE drive)
@@ -203,26 +204,148 @@ void fsext2CriarFicheiro(BYTE drive,BYTE far *nome,BYTE attr)
 	ERRO=EUNSUP;
 }
 
+void cvtUnixTime(DWORD t, TDATA far *data, THORA far *hora)
+{
+	DWORD a,b,c,d,e,f;
+
+	hora->centesimos = 0;
+
+	hora->segundos = t % 60;
+	t /= 60;
+	hora->minutos = t % 60;
+	t /= 60;
+	hora->hora = t % 24;
+	t /= 24;
+
+	a = (t*4+102032) / 146097+15;
+	b = t+2442113+a - (a/4);
+	c = (20*b-2442) / 7305;
+	d = b - 365*c - (c/4);
+	e = d * 1000 / 30601;
+	f = d - e * 30 - e * 601 / 1000;
+
+	if (e <= 13) {
+		c -= 4716;
+		e -= 1;
+	}
+	else {
+		c -= 4715;
+		e -= 13;
+	}
+
+	data->ano = c;
+	data->mes = e;
+	data->dia = f;
+
+}
+
+struct _dirll {
+	DWORD inode;
+	WORD rec_len;
+	BYTE name_len;
+	BYTE file_type;
+} dirll;
+
+BYTE dirfname[256];
+FSEXT2_INODE stat_inode;
+WORD cwd=0xFFFF;
+
 BYTE fsext2DirProcura(BYTE drive,TDIR_RECORD far *rec,BYTE first)
 {
 	WORD ch;
-	WORD b=fsext2OpenByInode(drive,2, 0);
-	kprintf("Open File: %u\r\n", b);
 
-	if (b==0xFFFF)
+	if (cwd==0xFFFF && first) {
+		cwd=fsext2OpenByInode(drive,2, 0);
+	}
+	else if (first) {
+		fsext2PosicionarFicheiro(cwd, 0, SF_INICIO);
+	}	
+
+
+	if (cwd==0xFFFF)
 		return 0;
 	
-	while( (ch=fsext2LerCaracter(b))<0x100) {
-		kprintf("%c", ch>31 && ch<128 ? ch : '.');
+	if( fsext2LerFicheiro(cwd, &dirll, sizeof(dirll))==sizeof(dirll) ) {
+		WORD rest;
+		if(fsext2LerFicheiro(cwd, dirfname, dirll.name_len)!=dirll.name_len) {
+			return 0;
+		}
+
+		dirfname[dirll.name_len]='\0';
+		//kprintf("%u %s\r\n", (WORD)dirll.inode, dirfname);
+		rest = dirll.rec_len - dirll.name_len - sizeof(dirll);
+
+		_fmemcpy(rec->nome, dirfname, 13);
+
+		rec->Tamanho = stat_inode.size;
+		rec->Attr = 0;
+
+		rec->Hora.minutos = 0;
+		rec->Hora.hora = 0;
+		rec->Hora.centesimos = 0;
+		rec->Hora.segundos = 0;
+
+		rec->Data.ano = 0;
+		rec->Data.mes = 0;
+		rec->Data.dia = 0;
+
+		if(fsext2iGetInode(drive, dirll.inode, &stat_inode)) {
+			//kprintf("%u %s %u Bytes %X\r\n", (WORD)dirll.inode, dirfname, (WORD) stat_inode.size, (WORD)stat_inode.mode);
+			rec->Tamanho = stat_inode.size;
+			rec->Attr = 0;
+			cvtUnixTime(stat_inode.mtime, &rec->Data, &rec->Hora);
+		}
+
+		fsext2PosicionarFicheiro(cwd, rest, SF_CURRENTE);
+		return 1;
 	}
-	kprintf("\r\n");
-	fsext2FecharFicheiro(b);
-	
+//	kprintf("\r\n");
+
+	//fsext2FecharFicheiro(b);
 
 	(void)rec;
 	(void)first;
 	ERRO=EUNSUP;
 	return 0;
+}
+
+DWORD fsext2iFindFile(BYTE drive, char far *name)
+{
+	WORD b = fsext2OpenByInode(drive, 2, 0);
+
+	DWORD i_n = 0;
+
+	if (b==0xFFFF)
+		return 0;
+	
+	while( fsext2LerFicheiro(b, &dirll, sizeof(dirll))==sizeof(dirll) ) {
+		WORD rest;
+		int i=0;
+		if(fsext2LerFicheiro(b, dirfname, dirll.name_len)!=dirll.name_len) {
+			return 0;
+		}
+
+		dirfname[dirll.name_len]='\0';
+		while(name[i]==dirfname[i]) {
+			if (name[i]=='\0') {
+				break;
+			}
+			i++;
+		}
+		if (i>0 && name[i]=='\0') {
+		       i_n = dirll.inode;
+		       break;
+	      	}	       
+
+		rest = dirll.rec_len - dirll.name_len - sizeof(dirll);
+
+		fsext2PosicionarFicheiro(b, rest, SF_CURRENTE);
+	}
+
+	fsext2FecharFicheiro(b);
+
+	return i_n;
+
 }
 
 void fsext2Chmod(BYTE drive,BYTE far *nome,BYTE attr)
@@ -294,11 +417,20 @@ BYTE fsext2GetAttr(BYTE drive,BYTE far *nome)
 
 WORD fsext2AbrirFicheiro(BYTE drive,BYTE far *nome,BYTE modo)
 {
-	(void)drive;
-	(void)nome;
-	(void)modo;
-	ERRO=EUNSUP;
-	return ERRO;
+	DWORD i_n;
+       	
+	if ((modo&CRIAR_F) || (modo&ESCREVER)) {
+		ERRO=EUNSUP;
+		return 0xFFFF;
+	}
+
+	i_n = fsext2iFindFile(drive, nome);
+	if (!i_n) {
+		ERRO=ENOFILE;
+		return 0xFFFF;
+	}
+	
+	return fsext2OpenByInode(drive, i_n, 0);
 }
 
 int fsext2LoadCluster(WORD bloco, DWORD *o, DWORD *r)
@@ -474,8 +606,8 @@ int fsext2iGetInode(BYTE drive, DWORD inode, FSEXT2_INODE far *p)
 	}
 
 	_fmemcpy(p, n, sizeof(FSEXT2_INODE));
-	kprintf("Mode %X\r\n", n->mode);
-	kprintf("Size %u\r\n", (WORD)n->size);
+//	kprintf("Mode %X\r\n", n->mode);
+//	kprintf("Size %u\r\n", (WORD)n->size);
 
 	return 1;	
 }
@@ -555,10 +687,35 @@ _abort_open_inode:
 
 void fsext2PosicionarFicheiro(WORD bloco,long deslocamento,BYTE modo)
 {
-	(void)bloco;
-	(void)deslocamento;
-	(void)modo;
-	ERRO=EUNSUP;
+	DWORD n_pos=0;
+
+	ERRO=FALSE;
+	if((FP_SEG(BlocoControlo[bloco])==0)||(bloco>=FILES))
+	{
+		ERRO=EBADF;
+		return 0;
+	}
+
+	switch(modo)
+	{
+		case SF_INICIO:
+			n_pos=deslocamento;break;
+		case SF_CURRENTE:
+			n_pos=BlocoControlo[bloco]->Fpos+deslocamento;break;
+		case SF_FIM:
+			n_pos=BlocoControlo[bloco]->Tamanho+deslocamento;break;
+		default:
+			ERRO=EFAULT;
+			return;
+	}
+
+	if(n_pos>BlocoControlo[bloco]->Tamanho)
+	{
+		ERRO=EFAULT;
+		return;
+	}
+
+	BlocoControlo[bloco]->Fpos = n_pos;
 }
 
 void fsext2TruncarFicheiro(WORD bloco)
@@ -600,11 +757,38 @@ BYTE fsext2Montada(BYTE drive)
 
 WORD fsext2LerFicheiro(WORD bloco, char far *ptr, WORD len)
 {
-	(void)bloco;
-	(void)ptr;
-	(void)len;
-	ERRO=EUNSUP;
-	return 0xFFFF;
+	DWORD r=0;
+	DWORD o=0;
+	WORD cnt = 0;
+	WORD ch;
+
+	ERRO=FALSE;
+	if((FP_SEG(BlocoControlo[bloco])==0)||(bloco>=FILES))
+	{
+		ERRO=EBADF;
+		return 0;
+	}
+
+	if (BlocoControlo[bloco]->Fpos >= BlocoControlo[bloco]->Tamanho)
+		return 0;
+
+	if (BlocoControlo[bloco]->Fpos + len > BlocoControlo[bloco]->Tamanho)
+		len = BlocoControlo[bloco]->Tamanho - BlocoControlo[bloco]->Fpos;
+
+	while(len) {
+		if(!fsext2LoadCluster(bloco, &o, &r))
+	       		return cnt;	
+		if (r > len) {
+			r=len;
+		}
+		_fmemcpy(ptr, BlocoControlo[bloco]->Buffer+o, r);
+		len -= r;
+		ptr += r;
+		cnt += r;
+		BlocoControlo[bloco]->Fpos += r;
+	}
+
+	return cnt;
 }
 
 WORD fsext2EscreverFicheiro(WORD bloco, char far *ptr, WORD len)
