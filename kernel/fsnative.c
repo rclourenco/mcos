@@ -1307,7 +1307,7 @@ static IFS fs_native = {
 	fsnDirProcura,
 };
 
-IFS *fsnGetDriver()
+IFS far *fsnGetDriver()
 {
 	return &fs_native;
 }

@@ -4,7 +4,7 @@
 
 int fsext2iGetInode(BYTE drive, DWORD inode, FSEXT2_INODE far *p);
 WORD fsext2OpenByInode(BYTE drive, DWORD inode, BYTE modo);
-int fsext2LoadCluster(WORD bloco, DWORD *o, DWORD *r);
+int fsext2LoadCluster(WORD bloco, DWORD far *o, DWORD far *r);
 BYTE fsext2iReadBlock(BYTE drive, DWORD block, BYTE far *buffer);
 DWORD fsext2iFindFile(BYTE drive, char far *name);
 
@@ -315,6 +315,7 @@ DWORD fsext2iFindFile(BYTE drive, char far *name)
 
 	DWORD i_n = 0;
 
+	kprintf("Finding %S at %X\r\n", name, b);
 	if (b==0xFFFF)
 		return 0;
 	
@@ -339,6 +340,8 @@ DWORD fsext2iFindFile(BYTE drive, char far *name)
 
 		rest = dirll.rec_len - dirll.name_len - sizeof(dirll);
 
+		if (rest > dirll.rec_len)
+			break;
 		fsext2PosicionarFicheiro(b, rest, SF_CURRENTE);
 	}
 
@@ -433,12 +436,14 @@ WORD fsext2AbrirFicheiro(BYTE drive,BYTE far *nome,BYTE modo)
 	return fsext2OpenByInode(drive, i_n, 0);
 }
 
-int fsext2LoadCluster(WORD bloco, DWORD *o, DWORD *r)
+int fsext2LoadCluster(WORD bloco, DWORD far *o, DWORD far *r)
 {
 	FSEXT2_DATA far *dd;
 	WORD drive=0;
 	DWORD fpos;
 	DWORD cluster;
+	DWORD block;
+	FSEXT2_OPEN_INODE far *on; 
 
 	ERRO=FALSE;
 	if((FP_SEG(BlocoControlo[bloco])==0)||(bloco>=FILES))
@@ -460,21 +465,50 @@ int fsext2LoadCluster(WORD bloco, DWORD *o, DWORD *r)
 
 	if (cluster == BlocoControlo[bloco]->Cluster)
 		return 1;
+		
+	on = (FSEXT2_OPEN_INODE far *)BlocoControlo[bloco]->fsd;
 
-	if (cluster > 12)
-		return 0;
-
-	{
-		FSEXT2_OPEN_INODE far *on = (FSEXT2_OPEN_INODE far *)BlocoControlo[bloco]->fsd;
-		DWORD block = on->inode.block[cluster-1];
-		if (!block)
+	if (cluster < 13) {
+		block = on->inode.block[cluster-1];
+	} else if (cluster < 269 ) {
+		if (!on->inode.block[12])
 			return 0;
 
-		if(!fsext2iReadBlock(drive,block, BlocoControlo[bloco]->Buffer)) {
+		if (on->cn_block==NULL) {
+			on->cn_block = (DWORD far *)AlocaMemoria(dd->bsb);
+			if (on->cn_block==NULL)
 				return 0;
 		}
-		BlocoControlo[bloco]->Cluster=cluster;
+
+		if (on->cn_block_number != on->inode.block[12]) {
+			//kprintf("Block %X\r\n", (WORD)on->inode.block[12]);
+			if(!fsext2iReadBlock(drive, on->inode.block[12], on->cn_block)) {
+				return 0;
+			}
+			on->cn_block_number = on->inode.block[12];
+			//kprintf("File Block 13 %X\r\n", (WORD)on->cn_block[0]);
+
+		}
+
+
+		block = on->cn_block[cluster-13];
+
 	}
+	else {
+		return 0;
+	}
+
+	if (!block) {
+		// sparse file, set buffer to zeroes
+		_fmemset(BlocoControlo[bloco]->Buffer, 0, dd->bsb);
+		BlocoControlo[bloco]->Cluster=cluster;
+		return 1;
+	}
+
+	if(!fsext2iReadBlock(drive,block, BlocoControlo[bloco]->Buffer)) {
+		return 0;
+	}
+	BlocoControlo[bloco]->Cluster=cluster;
 	
 	return 1;
 }
@@ -502,11 +536,12 @@ WORD fsext2LerCaracter(WORD bloco)
 
 
 	if (BlocoControlo[bloco]->Fpos >= BlocoControlo[bloco]->Tamanho)
-		return 0xFFFF;
+		return __EOF;
 
-	if(!fsext2LoadCluster(bloco, &o, &r))
-	       return 0xFFFF;	
-
+	if(!fsext2LoadCluster(bloco, &o, &r)) {
+		ERRO=EFAULT;
+		return 0xFFFF;	
+	}
 
 	BlocoControlo[bloco]->Fpos++;
 
@@ -776,8 +811,13 @@ WORD fsext2LerFicheiro(WORD bloco, char far *ptr, WORD len)
 		len = BlocoControlo[bloco]->Tamanho - BlocoControlo[bloco]->Fpos;
 
 	while(len) {
-		if(!fsext2LoadCluster(bloco, &o, &r))
-	       		return cnt;	
+		if(!fsext2LoadCluster(bloco, &o, &r)) {
+	       		ERRO=EFAULT;
+			return cnt;
+		}
+
+		if (r==0)
+			return 0;
 		if (r > len) {
 			r=len;
 		}
@@ -826,7 +866,7 @@ static IFS fs_ext2 = {
 	fsext2DirProcura,
 };
 
-IFS *fsext2GetDriver()
+IFS far *fsext2GetDriver()
 {
 	return &fs_ext2;
 }

@@ -59,8 +59,8 @@ typedef struct {
 	BYTE (*vDirProcura)(BYTE drive, TDIR_RECORD far *rec, BYTE first);
 } IFS;
 
-IFS *fsbaseGetDriver(BYTE drive);
-IFS *fsbaseGetDriverForFcb(WORD fcbn);
+IFS far *fsbaseGetDriver(BYTE drive);
+IFS far *fsbaseGetDriverForFcb(WORD fcbn);
 
 typedef struct {
 	BYTE _jmpcode[3]; //reservado
@@ -105,7 +105,7 @@ typedef struct {
 	WORD TamSector;
 	DRIVE_PARAM p;
 	BYTE FsID[6];
-	IFS *ifsdriver;
+	IFS far *ifsdriver;
 	void far *fs_data;
 }TDRIVE;
 

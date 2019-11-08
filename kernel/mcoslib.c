@@ -456,3 +456,13 @@ void _fmemcpy(void far *a, void far *b, unsigned s)
 	}
 }
 
+void _fmemset(void far *a, int c, unsigned s)
+{
+	asm {
+		mov al, byte ptr c;
+		les di, a;
+		mov cx, s;
+		cld;
+		rep stosb;
+	}
+}

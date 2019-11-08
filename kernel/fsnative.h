@@ -57,6 +57,6 @@ DWORD fsnDiskSpace(BYTE drive);                                       //user
 BYTE fsnMontada(BYTE drive);                                          //user
 WORD fsnLerFicheiro(WORD bloco, char far *ptr, WORD len);             //user;
 WORD fsnEscreverFicheiro(WORD bloco, char far *ptr, WORD len);        //user;
-IFS *fsnGetDriver();
+IFS far *fsnGetDriver();
 
 #endif

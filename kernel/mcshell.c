@@ -705,7 +705,12 @@ void Type()
 	{
 		ch=LerCaracter(handle);
 		if(ERRO) break;
-		Term_Output(ch);
+		if (ch>0xFF) break;
+		//continue;
+		if(ch<32 && ch!=13 && ch!=10)
+			Term_Output('.');
+		else
+			Term_Output(ch);
 		if(ch=='\n') {
 			lines++;
 			if(lines==24) {

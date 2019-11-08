@@ -34,7 +34,7 @@ typedef struct {
 	DWORD inode_number;  // which inode it points
 	FSEXT2_INODE inode;
 	DWORD cn_block_number;
-	BYTE far *cn_block;
+	DWORD far *cn_block;
 } FSEXT2_OPEN_INODE;
 
 typedef struct {
@@ -124,6 +124,6 @@ DWORD fsext2DiskSpace(BYTE drive);                                       //user
 BYTE fsext2Montada(BYTE drive);                                          //user
 WORD fsext2LerFicheiro(WORD bloco, char far *ptr, WORD len);             //user;
 WORD fsext2EscreverFicheiro(WORD bloco, char far *ptr, WORD len);        //user;
-IFS *fsext2GetDriver();
+IFS far *fsext2GetDriver();
 
 #endif

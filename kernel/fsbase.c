@@ -45,7 +45,7 @@ WORD fsbaseInitFs()
 	return 1;
 }
 
-IFS *fsbaseGetDriver(BYTE drive)
+IFS far *fsbaseGetDriver(BYTE drive)
 {
 	ERRO=FALSE;
 	if (drive>=MAXDRIVES || Drive[drive].Montada==FALSE) {
@@ -55,7 +55,7 @@ IFS *fsbaseGetDriver(BYTE drive)
 	return Drive[drive].ifsdriver;
 }
 
-IFS *fsbaseGetDriverForFcb(WORD fcbn)
+IFS far *fsbaseGetDriverForFcb(WORD fcbn)
 {
 	BYTE drive;
 	ERRO=FALSE;
@@ -388,6 +388,7 @@ DWORD fsbaseFicheiro_Size(WORD bloco)
 		ERRO=EBADF;
 		return 0L;
 	}
+	kprintf("FSIZE %u of %u\r\n", (WORD)BlocoControlo[bloco]->Tamanho, bloco);
 	return BlocoControlo[bloco]->Tamanho;
 }
 

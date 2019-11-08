@@ -128,6 +128,50 @@ PubProc@        _ping,  __CDECL__
     ret
 EndProc@        _ping, __CDECL__
 
+public  N_LXMUL@
+
+N_LXMUL@        PROC    NEAR
+                push    si
+                xchg    si, ax          ; save lo1
+                xchg    ax, dx
+                test    ax, ax          ; skip mul if hi1==0
+                jz      nohi1
+                mul     bx              ; hi1 * lo2
+
+nohi1:          ; if we jumped here, ax==0 so the following swap works
+                jcxz    nohi2           ; skip mul if hi2==0
+                xchg    cx, ax          ; result <-> hi2
+                mul     si              ; lo1 * hi2
+                add     ax, cx          ; ax = hi1*lo2 + hi2*lo1
+nohi2:
+                xchg    ax, si
+                mul     bx              ; lo1 * lo2
+                add     dx, si          ; hi order result += partials
+                pop     si
+                ret
+N_LXMUL@        ENDP
+
+public N_LXURSH@
+
+N_LXURSH@	PROC 
+	cmp     cl,16 
+        jae     rsh@small 	
+	 mov	bx, dx
+	 shr	ax, cl
+	 shr	dx, cl
+	 neg	cl
+	 add	cl, 16
+	 shl	bx, cl
+	 or	ax, bx
+	 ret
+rsh@small:
+	sub	cl, 16
+	xchg	dx, ax
+	xor	dx, dx
+	shr	ax, cl
+	ret
+N_LXURSH@      ENDP
+
 
 public  N_SCOPY@
 

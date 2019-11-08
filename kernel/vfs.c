@@ -8,8 +8,8 @@ FSMounter fsmounters[] = {
 	NULL
 };
 
-#define DRIVERFOR(unit, ret) IFS *ifsd=fsbaseGetDriver(unit); if (!ifsd) return ret;
-#define DRIVERFORFCB(b, ret) IFS *ifsd=fsbaseGetDriverForFcb(b); if (!ifsd) return ret;
+#define DRIVERFOR(unit, ret) IFS far *ifsd=fsbaseGetDriver(unit); if (!ifsd) return ret;
+#define DRIVERFORFCB(b, ret) IFS far *ifsd=fsbaseGetDriverForFcb(b); if (!ifsd) return ret;
 
 void CriarFicheiro(BYTE drive,BYTE far *nome,BYTE attr)
 {
@@ -130,12 +130,14 @@ DWORD Ficheiro_Pos(WORD bloco)
 
 DWORD Ficheiro_Size(WORD bloco)
 {
+	kprintf("F Size %u\r\n", bloco);
 	return fsbaseFicheiro_Size(bloco);
 }
 
 WORD LerFicheiro(WORD bloco, char far *ptr, WORD len)
 {
 	DRIVERFORFCB(bloco, 0)
+	kprintf("Reading from %u\r\n", bloco);
 	return ifsd->vLerFicheiro(bloco, ptr, len);
 }
 

@@ -58,6 +58,7 @@ void writelongnum(unsigned long);
 void kprintf(char *str, ...);
 
 void _fmemcpy(void far *a, void far *b, unsigned s);
+void _fmemset(void far *a, int c, unsigned s);
 
 unsigned long longmul2(unsigned long a, unsigned long b);
 

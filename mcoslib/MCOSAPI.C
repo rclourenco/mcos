@@ -170,7 +170,7 @@ unsigned long mcos_fsize(int handle)
 {
 	unsigned l,h;
 	asm {
-		mov ah,36;
+		mov ah,86;
 		mov bx,handle;
 		int 80h;
 		mov h,cx;
