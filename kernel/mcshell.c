@@ -3,9 +3,10 @@
 #include "mcos.h"
 #include "mcoslib.h"
 #include "vfs.h"
+#define MAX_PATH 127
 
 char input[256];
-char comando[13];
+char comando[MAX_PATH+1];
 char argumento[128];
 char prompt1[]="[MCOS]$ ";
 char prompt2[]="[MCOS A:]$ ";
@@ -527,7 +528,7 @@ void parse()
 {
 	int a,b;
 	a=0;
-	while((input[a]!=32)&&(a<12)&&(input[a]))
+	while((input[a]!=32)&&(a<MAX_PATH)&&(input[a]))
 	{
 		comando[a]=input[a];
 		a++;
@@ -578,14 +579,20 @@ void Ls()
 	char v,i;
 	char out[20];
 	unsigned char c=argumento[0];
+	char far *folder = argumento;
 	char drive=CurDrv;
-	switch(c)
-	{
+	if (argumento[0] && argumento[1]==':') {
+		switch(c)
+		{
 		case 'A':
 		case 'a':drive=0;break;
 		case 'B':
 		case 'b':drive=1;break;
+		}
+
+		folder+=2;
 	}
+
 	ApagaErro();
 	if(drive>1)
 	{
@@ -601,7 +608,7 @@ void Ls()
 	Term_Output('A'+drive);
 	write_str(":\n");
 	linhas=25;
-	v=DirProcura(drive,&d,1);
+	v=DirProcura(drive, folder, &d,1);
 	numl=0;
 	nfich=0;
 	while(v)
@@ -631,7 +638,7 @@ void Ls()
 			if(GetKey()==0x011B) break;
 			numl=0;
 		}
-		v=DirProcura(drive,&d,0);
+		v=DirProcura(drive, folder, &d,0);
 	}
 	_ultoa(nfich,out,3,8);
 	write_str("\nNumber of files: ");write_str(out);write_str("\n");

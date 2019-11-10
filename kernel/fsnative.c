@@ -1248,7 +1248,7 @@ DWORD fsnDiskSpace(BYTE drive)
 	return longmul2(dd->NClusters,tamcluster);
 }
 
-BYTE fsnDirProcura(BYTE drive,TDIR_RECORD far *rec,BYTE first)
+BYTE fsnDirProcura(BYTE drive, char far *folder, TDIR_RECORD far *rec,BYTE first)
 {
 	WORD entrada;
 	FSN_DATA far *dd;
@@ -1258,6 +1258,9 @@ BYTE fsnDirProcura(BYTE drive,TDIR_RECORD far *rec,BYTE first)
 		ERRO=EINVDRV;
 		return 0;
 	}
+
+	if (folder[0])
+		return 0;
 
 	dd = fsnDriveData(drive);
 

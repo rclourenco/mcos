@@ -266,11 +266,27 @@ void kprintf(char *str,...)
             break;
           case 'c': putchar(*ptr); ptr++;
 			break;
-		  case 's': writestr((char *)*ptr); ptr++; break;
-		  case 'S':
-			writestr((char far *)MK_FP(*(ptr+1),*ptr)); ptr++; ptr++;
+	  case 's': writestr((char *)*ptr); ptr++; break;
+	  case 'S':
+		writestr((char far *)MK_FP(*(ptr+1),*ptr)); ptr++; ptr++;
+		break;
+	  case 'l': st=2; break;
         }
-        st=0;
+	if (st==1) st=0;
+      break;
+      case 2:
+      	switch(*str) {
+	case 'x':
+	case 'X': writehex(*(ptr+1)); writehex(*ptr);
+		ptr++; ptr++;
+		break;
+	case 'd':
+	case 'i':
+	case 'u':writelongnum(*ptr);
+		ptr++; ptr++;
+		break;
+	}
+	st=0;
       break;
     }
     str++;

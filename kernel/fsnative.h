@@ -37,7 +37,7 @@ WORD fsnMontarDrive(BYTE drive);                                 //user
 WORD fsnDesMontarDrive(BYTE drive);                              //user
 WORD fsnSyncDrive(BYTE drive);                                      //user
 void fsnCriarFicheiro(BYTE drive,BYTE far *nome,BYTE attr);        //user
-BYTE fsnDirProcura(BYTE drive,TDIR_RECORD far *rec,BYTE first);    //user
+BYTE fsnDirProcura(BYTE drive,char far *folder, TDIR_RECORD far *rec,BYTE first);    //user
 void fsnChmod(BYTE drive,BYTE far *nome,BYTE attr);                //user
 void fsnRenomear(BYTE drive,BYTE far *nome,BYTE far *novo_nome);   //user
 void fsnEliminar(BYTE drive,BYTE far *nome);                       //user

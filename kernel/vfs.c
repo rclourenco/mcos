@@ -226,10 +226,10 @@ WORD SyncDrive(BYTE drive)
 	return ifsd->vSyncDrive(drive);
 }
 
-BYTE DirProcura(BYTE drive, TDIR_RECORD far *rec, BYTE first)
+BYTE DirProcura(BYTE drive, char far *folder, TDIR_RECORD far *rec, BYTE first)
 {
 	DRIVERFOR(drive, 0)
 
-	return ifsd->vDirProcura(drive, rec, first);
+	return ifsd->vDirProcura(drive, folder, rec, first);
 }
 

@@ -6,12 +6,51 @@ int fsext2iGetInode(BYTE drive, DWORD inode, FSEXT2_INODE far *p);
 WORD fsext2OpenByInode(BYTE drive, DWORD inode, BYTE modo);
 int fsext2LoadCluster(WORD bloco, DWORD far *o, DWORD far *r);
 BYTE fsext2iReadBlock(BYTE drive, DWORD block, BYTE far *buffer);
+BYTE fsext2iWriteBlock(BYTE drive, DWORD block, BYTE far *buffer);
 DWORD fsext2iFindFile(BYTE drive, char far *name);
-
+DWORD fsext2iClusterToBlock(BYTE drive, FSEXT2_OPEN_INODE far *on, DWORD cluster);
+DWORD fsext2iMknode(BYTE drive, WORD mode);
 
 FSEXT2_DATA far * fsext2DriveData(BYTE drive)
 {
 	return (FSEXT2_DATA far *)Drive[drive].fs_data;
+}
+
+DWORD AllocInode(BYTE drive)
+{
+	DWORD nf = 0;
+	DWORD i;
+	FSEXT2_DATA far *dd = fsext2DriveData(drive);
+	
+	if (!dd)
+		return 0;
+
+	nf = dd->s->inodes_count / 8L + (dd->s->inodes_count%8L ? 1L : 0L);
+//	kprintf("NF: %lu\r\n", nf);
+	for(i=0;i<nf;i++) {
+		kprintf("%X ", dd->inode_bitmap[i]);
+		if (dd->inode_bitmap[i]<0xFF) {
+			break;
+		}
+	}
+//	kprintf("Free At %lu\r\n", i);
+	if (i==nf)
+		return 0;
+
+	nf = i;
+
+//	kprintf("> %X\r\n", dd->inode_bitmap[nf] );
+
+	for(i=0;i<8;i++) {
+//		kprintf("%lu: %X\r\n", i, ((dd->inode_bitmap[nf]>>i) & 1));
+		if (((dd->inode_bitmap[nf]>>i) & 1)==0) {
+			dd->inode_bitmap[nf] |= (1<<i);
+			dd->s->free_inodes_count--;
+			dd->g->free_inodes--;
+			return nf * 8L + i + 1;
+		}
+	}
+	return 0;
 }
 
 WORD fsext2MontarDrive(BYTE drive)
@@ -19,6 +58,8 @@ WORD fsext2MontarDrive(BYTE drive)
 	BYTE far *tmp;
 	WORD sector;
 	WORD cont;
+	DWORD i;
+	DWORD numl;
 	FSEXT2_DATA far *dd;
 
 	ERRO=FALSE;
@@ -48,7 +89,9 @@ WORD fsext2MontarDrive(BYTE drive)
 	}
 
 	/* Set all pointer to NULL before any allocations */
-	dd->work_block = NULL;
+	dd->work_block   = NULL;
+	dd->block_bitmap = NULL;
+	dd->inode_bitmap = NULL;
 
 	dd->s = (FSEXT2_SUPER far *) tmp;
 	if (dd->s->magic != FSEXT2_SUPER_MAGIC) {
@@ -95,72 +138,52 @@ WORD fsext2MontarDrive(BYTE drive)
 		goto _abort_mount;
 	}
 
-	/*
-	Drive[drive].TamSector=BootRecord->Bps;
-	Drive[drive].SectorPista=BootRecord->Spp;
-	Drive[drive].Heads=BootRecord->Hn;
-	Drive[drive].NSectors=BootRecord->Lsn;
+	Drive[drive].Montada=TRUE;
 
-	dd->SectorCluster=BootRecord->Spc;
-	dirsect=((BootRecord->Rde)*32)/Drive[drive].TamSector;
-	if(((BootRecord->Rde)*32)%Drive[drive].TamSector) dirsect++;
+	kprintf("Block Bitmap Size: %lu\r\n", (DWORD)(dd->g->inode_bitmap - dd->g->block_bitmap));
+	kprintf("Inode Bitmap Size: %lu\r\n", (DWORD)(dd->g->inode_table  - dd->g->inode_bitmap));
 
-	dd->FATSector=BootRecord->Rs+BootRecord->Ssn;
-	dd->DirSector=dd->FATSector+BootRecord->Spf;
-
-	dd->DadosSector=dd->DirSector+dirsect;
-	dd->NEntradas=BootRecord->Rde;
-	dd->NClusters=(BootRecord->Lsn-dd->DadosSector)/dd->SectorCluster;
-	_fatsize=(BootRecord->Spf)*Drive[drive].TamSector;
-	_dirsize=dirsect*Drive[drive].TamSector;
-
-	dd->FAT=(WORD far *)AlocaMemoria(_fatsize);
-	dd->Entrada=(TDIR far *)AlocaMemoria(_dirsize);
-	dd->_UCA=0;
-	dd->_UE=0;
-	if((!FP_SEG(dd->FAT))||(!FP_SEG(dd->Entrada)))
-	{
+	// Load Block Bitmap
+	numl = dd->g->inode_bitmap - dd->g->block_bitmap;
+	dd->block_bitmap = (BYTE far *)AlocaMemoria( numl * dd->bsb);
+	if (!dd->block_bitmap) {
 		ERRO=EMEM;
 		goto _abort_mount;
 	}
 
-	Drive[drive].Montada=TRUE; // needed for LerSector
-
-	endereco=(BYTE far *)dd->FAT;
-	sector=dd->FATSector;
-	for(cont=0;cont<_fatsize;cont++)
-	{
-		if(!(LerSector(drive,sector,endereco)))
-		{
+	for (i=0;i<numl;i++) {
+		char far *ptr = (char far *)dd->block_bitmap;
+		if(!fsext2iReadBlock(drive, dd->g->block_bitmap+i, ptr)) {
 			ERRO=EINOUT;
 			goto _abort_mount;
 		}
-		sector++;
-		cont+=Drive[drive].TamSector;
-		endereco+=Drive[drive].TamSector;
+		ptr += dd->bsb;
 	}
-	endereco=(BYTE far *)dd->Entrada;
-	sector=dd->DirSector;
-	for(cont=0;cont<_dirsize;cont++)
-	{
-		if(!(LerSector(drive,sector,endereco)))
-		{
+
+	// Load Inode Bitmap
+	numl = dd->g->inode_table  - dd->g->inode_bitmap;
+	dd->inode_bitmap = (BYTE far *)AlocaMemoria( numl * dd->bsb );
+	if (!dd->inode_bitmap) {
+		ERRO=EMEM;
+		goto _abort_mount;
+	}
+
+	for (i=0;i<numl;i++) {
+		char far *ptr = (char far *)dd->inode_bitmap;
+		if(!fsext2iReadBlock(drive, dd->g->inode_bitmap+i, ptr)) {
 			ERRO=EINOUT;
 			goto _abort_mount;
 		}
-		sector++;
-		cont+=Drive[drive].TamSector;
-		endereco+=Drive[drive].TamSector;
+		ptr += dd->bsb;
 	}
-	dd->_fatsize=_fatsize;
-	dd->_dirsize=_dirsize;
 
-        */
-	Drive[drive].Montada=TRUE;
+
 	return 1;
 	
 _abort_mount:
 	Drive[drive].Montada=FALSE;
+	LibertaMemoria(dd->block_bitmap);
+	LibertaMemoria(dd->inode_bitmap);
 	LibertaMemoria(dd->s);
 	LibertaMemoria(dd->work_block);
 	LibertaMemoria(dd);
@@ -181,6 +204,8 @@ WORD fsext2DesMontarDrive(BYTE drive)
 	if (!dd)
 		return 1;
 
+	LibertaMemoria(dd->block_bitmap);
+	LibertaMemoria(dd->inode_bitmap);
 	LibertaMemoria(dd->s);
 	LibertaMemoria(dd->work_block);
 	LibertaMemoria(dd);
@@ -250,24 +275,34 @@ BYTE dirfname[256];
 FSEXT2_INODE stat_inode;
 WORD cwd=0xFFFF;
 
-BYTE fsext2DirProcura(BYTE drive,TDIR_RECORD far *rec,BYTE first)
+BYTE fsext2DirProcura(BYTE drive, char far *folder, TDIR_RECORD far *rec,BYTE first)
 {
 	WORD ch;
+	FSEXT2_OPEN_INODE far *on;
 
-	if (cwd==0xFFFF && first) {
-		cwd=fsext2OpenByInode(drive,2, 0);
+	if (first) {
+		if (folder && folder[0]) {
+			if (cwd!=0xFFFF)
+				fsext2FecharFicheiro(cwd);
+			cwd = fsext2AbrirFicheiro(drive, folder, 0);
+		} else if(cwd==0xFFFF) {
+			cwd=fsext2OpenByInode(drive,2, 0);
+		} else {
+			fsext2PosicionarFicheiro(cwd, 0, SF_INICIO);
+		}
 	}
-	else if (first) {
-		fsext2PosicionarFicheiro(cwd, 0, SF_INICIO);
-	}	
-
 
 	if (cwd==0xFFFF)
 		return 0;
-	
-	if( fsext2LerFicheiro(cwd, &dirll, sizeof(dirll))==sizeof(dirll) ) {
+
+	on = (FSEXT2_OPEN_INODE far *)BlocoControlo[cwd]->fsd;
+	if ((on->inode.mode & 0xF000) != 0x4000) {
+		return 0;
+	}
+
+	if( fsext2LerFicheiro(cwd, (char far *)&dirll, sizeof(dirll))==sizeof(dirll) ) {
 		WORD rest;
-		if(fsext2LerFicheiro(cwd, dirfname, dirll.name_len)!=dirll.name_len) {
+		if(fsext2LerFicheiro(cwd, (char far *)dirfname, dirll.name_len)!=dirll.name_len) {
 			return 0;
 		}
 
@@ -309,9 +344,9 @@ BYTE fsext2DirProcura(BYTE drive,TDIR_RECORD far *rec,BYTE first)
 	return 0;
 }
 
-DWORD fsext2iFindFile(BYTE drive, char far *name)
+DWORD _fsext2iFindFile(BYTE drive, DWORD inode, char far *name)
 {
-	WORD b = fsext2OpenByInode(drive, 2, 0);
+	WORD b = fsext2OpenByInode(drive, inode, 0);
 
 	DWORD i_n = 0;
 
@@ -319,11 +354,11 @@ DWORD fsext2iFindFile(BYTE drive, char far *name)
 	if (b==0xFFFF)
 		return 0;
 	
-	while( fsext2LerFicheiro(b, &dirll, sizeof(dirll))==sizeof(dirll) ) {
+	while( fsext2LerFicheiro(b, (char far *)&dirll, sizeof(dirll))==sizeof(dirll) ) {
 		WORD rest;
 		int i=0;
-		if(fsext2LerFicheiro(b, dirfname, dirll.name_len)!=dirll.name_len) {
-			return 0;
+		if(fsext2LerFicheiro(b, (char far *)dirfname, dirll.name_len)!=dirll.name_len) {
+			break;
 		}
 
 		dirfname[dirll.name_len]='\0';
@@ -351,6 +386,56 @@ DWORD fsext2iFindFile(BYTE drive, char far *name)
 
 }
 
+char far *trindex(char far *text, char c)
+{
+	char far *tmp = text;
+	while(*tmp)
+		tmp++;
+	while(*tmp != c && tmp != text)
+		tmp--;
+
+	return *tmp == c ? tmp : NULL;
+}
+
+
+char far *tindex(char far *text, char c)
+{
+	while(*text && *text!=c)
+		text++;
+	return *text == c ? text : NULL;
+}
+
+DWORD fsext2iFindFile(BYTE drive, char far *name)
+{
+	DWORD start_inode = 2;
+	char far *e;
+	if (name[0]!='/') {
+		
+	}
+	else {
+		if (name[1]=='\0')
+			return start_inode;
+		name++;
+	}
+
+	do {
+		e = tindex(name, '/');
+		if (e) e[0] = '\0';
+
+		start_inode = _fsext2iFindFile(drive, start_inode, name);
+		if (!start_inode)
+			return start_inode;
+
+		kprintf("=> %S %u\r\n", name, (WORD)start_inode);
+		if (e) {
+			e[0] = '/';
+			name = e + 1;
+		}
+	} while(e);
+
+	return start_inode;
+}
+
 void fsext2Chmod(BYTE drive,BYTE far *nome,BYTE attr)
 {
 	(void)drive;
@@ -376,27 +461,33 @@ void fsext2Eliminar(BYTE drive,BYTE far *nome)
 
 void fsext2FecharFicheiro(WORD bloco)
 {
+	FSEXT2_OPEN_INODE far *on;
 	ERRO=FALSE;
 	if((FP_SEG(BlocoControlo[bloco])==0)||(bloco>=FILES))
 	{
 		ERRO=EBADF;
 		return;
 	}
-	/*
-	if(BlocoControlo[bloco]->Modo&ESCREVER)
+	
+	if (BlocoControlo[bloco]->Modo&ESCREVER)
 	{
-		TDIR far *b_ent;
-		fsnFlushFicheiro(bloco);
+		//TDIR far *b_ent;
+		fsext2FlushFicheiro(bloco);
 
+		/*
 		b_ent = fsnBlocoEntrada(BlocoControlo[bloco]);
 
 		b_ent->Tamanho=BlocoControlo[bloco]->Tamanho;
 		b_ent->FCluster=BlocoControlo[bloco]->FCluster;
 		b_ent->Data=Ler_Packed_Data();
 		b_ent->Hora=Ler_Packed_Hora();
+		*/
 	}
-	*/
 
+	on = (FSEXT2_OPEN_INODE far *)BlocoControlo[bloco]->fsd;
+	if (on && on->cn_block) {
+		LibertaMemoria(on->cn_block);
+	}
 	// TODO free fsd buffers
 	LibertaMemoria(BlocoControlo[bloco]->fsd);
 	LibertaMemoria(BlocoControlo[bloco]->Buffer);
@@ -406,8 +497,36 @@ void fsext2FecharFicheiro(WORD bloco)
 
 void fsext2FlushFicheiro(WORD bloco)
 {
-	(void)bloco;
-	ERRO=EUNSUP;
+	FSEXT2_DATA far *dd;
+	FSEXT2_OPEN_INODE far *on;
+	BYTE drive;
+	ERRO=FALSE;
+	if((FP_SEG(BlocoControlo[bloco])==0)||(bloco>=FILES))
+	{
+		ERRO=EBADF;
+		return;
+	}
+
+	drive = BlocoControlo[bloco]->Drive;
+	dd = fsext2DriveData(drive);
+	if (!dd)
+		return;
+
+	on = (FSEXT2_OPEN_INODE far *)BlocoControlo[bloco]->fsd;
+	
+	if (BlocoControlo[bloco]->dirty && BlocoControlo[bloco]->Cluster) {
+		DWORD dirty_block = fsext2iClusterToBlock(drive, on, BlocoControlo[bloco]->Cluster);
+		if (dirty_block>0 && dirty_block < 0xFFFFFFFFL) {
+			if (!fsext2iWriteBlock(drive, dirty_block, BlocoControlo[bloco]->Buffer)) {
+				ERRO=EINOUT;
+				return;
+			}
+		}
+		BlocoControlo[bloco]->dirty = 0;
+	}
+
+	// Write Inode and pointer blocks
+	// Sync
 }
 
 BYTE fsext2GetAttr(BYTE drive,BYTE far *nome)
@@ -418,22 +537,182 @@ BYTE fsext2GetAttr(BYTE drive,BYTE far *nome)
 	return 0;
 }
 
-WORD fsext2AbrirFicheiro(BYTE drive,BYTE far *nome,BYTE modo)
+int fsext2iLink(BYTE drive, DWORD i_n, BYTE far *path)
 {
-	DWORD i_n;
-       	
-	if ((modo&CRIAR_F) || (modo&ESCREVER)) {
-		ERRO=EUNSUP;
-		return 0xFFFF;
+	WORD b;
+	char far *p;
+	char far *nome;
+	WORD nl, pad, padb;
+	BYTE ok=0;
+	DWORD posb;
+
+	p = trindex(path, '/');
+	if (p)	
+		*p = '\0';
+
+	nome = p ? p+1: path;
+
+	nl=Strlenx(nome);
+	if (nl==0)
+		return 0;
+
+	pad = 4 - nl%4;
+
+	kprintf(">> Name Len %u Pad %u Store at: %S name %S\r\n", nl, pad, p ? path : "/", nome);
+
+	b=fsext2AbrirFicheiro(drive, p ? path : "/", ESCREVER|EXPANDIR);
+	kprintf("Opened at %u\r\n", b);
+	if (b>=FILES||ERRO)
+		return 0;
+
+
+	posb = fsbaseFicheiro_Pos(b);
+	while( fsext2LerFicheiro(b, (char far *)&dirll, sizeof(dirll))==sizeof(dirll) ) {
+		WORD rest;
+
+	//	int i=0;
+		if(fsext2LerFicheiro(b, (char far *)dirfname, dirll.name_len)!=dirll.name_len) {
+			break;
+		}
+
+		/*
+		dirfname[dirll.name_len]='\0';
+		while(name[i]==dirfname[i]) {
+			if (name[i]=='\0') {
+				break;
+			}
+			i++;
+		}
+		if (i>0 && name[i]=='\0') {
+		       i_n = dirll.inode;
+		       break;
+	      	}
+ 		*/		
+
+		rest = dirll.rec_len - dirll.name_len - sizeof(dirll);
+		padb = 4 - dirll.name_len % 4;
+		if (rest > nl+sizeof(dirll) + pad+padb) {
+			ok = 1;
+		}
+		kprintf("Rest %u Inode %lu Loc %lu, Rec Len %u\r\n", rest, dirll.inode, posb, dirll.rec_len);
+		if (ok)
+			break;
+
+		if (rest > dirll.rec_len)
+			break;
+
+		fsext2PosicionarFicheiro(b, rest, SF_CURRENTE);
+		posb = fsbaseFicheiro_Pos(b);
 	}
 
+	if (ok) {
+		WORD offset = dirll.name_len + padb;
+		WORD fix_rec_len = sizeof(dirll) + dirll.name_len + padb;
+		WORD new_rec_len = dirll.rec_len - fix_rec_len;
+		fsext2PosicionarFicheiro(b, posb, SF_INICIO);
+		dirll.rec_len = fix_rec_len;
+		if (fsext2EscreverFicheiro(b, (char far *)&dirll, sizeof(dirll))!=sizeof(dirll)) {
+			ERRO = EFAULT;
+			return 0;
+		}
+		fsext2PosicionarFicheiro(b, offset, SF_CURRENTE);
+		dirll.rec_len = new_rec_len;
+		dirll.inode = i_n;
+		dirll.name_len = nl;
+		if (fsext2EscreverFicheiro(b, (char far *)&dirll, sizeof(dirll))!=sizeof(dirll)) {
+			ERRO = EFAULT;
+			return 0;
+		}
+
+		if (fsext2EscreverFicheiro(b, nome, nl)!=nl) {
+			ERRO = EFAULT;
+			return 0;
+		}
+	}
+
+	posb = fsbaseFicheiro_Pos(b);
+	kprintf("After Changes: %lu\r\n", posb);
+
+	fsext2FecharFicheiro(b);
+	return ok;
+}
+
+WORD fsext2AbrirFicheiro(BYTE drive,BYTE far *nome,BYTE modo)
+{
+	BYTE cf = 0;
+	DWORD i_n;
+	WORD handle;
+
+      	ERRO=FALSE; 
+
 	i_n = fsext2iFindFile(drive, nome);
-	if (!i_n) {
-		ERRO=ENOFILE;
-		return 0xFFFF;
+	cf |= (i_n) ? 1 : 0;
+	cf |= (modo&CRIAR_F) ? 2 : 0;
+	cf |= (modo&ESCREVER) ? 4 : 0;
+
+	switch (cf) {
+	case 0: 
+	case 4:
+		ERRO=ENOFILE; return 0xFFFF;
+	case 1: return fsext2OpenByInode(drive, i_n, 0);
+	case 5: return fsext2OpenByInode(drive, i_n, modo);
+	case 6:
+	case 2:
+		ERRO=FALSE;
+		i_n = fsext2iMknode(drive, 0); 
+		if (!i_n) {
+			ERRO=EFAULT;
+			return 0xFFFF;
+		}	
+		fsext2iLink(drive, i_n, nome);
+		kprintf("Inode %lu\r\n", i_n);
+		handle = fsext2OpenByInode(drive, i_n, modo);
+		kprintf("Handle %lu\r\n", handle);
+		return handle;
+	case 7:
+	case 3: // truncate(drive, i_n);
+		return fsext2OpenByInode(drive, i_n, modo);
+
+	}
+
+	ERRO=EUNSUP;
+	return 0xFFFF;
+}
+
+DWORD fsext2iClusterToBlock(BYTE drive, FSEXT2_OPEN_INODE far *on, DWORD cluster)
+{
+	FSEXT2_DATA far *dd;
+	DWORD block = 0xFFFFFFFFL;
+
+	dd = fsext2DriveData(drive);
+	if (!dd)
+		return block; // invalid
+
+	if (cluster < 13) {
+		block = on->inode.block[cluster-1];
+	} else if (cluster < 269 ) {
+		if (!on->inode.block[12])
+			return block; // invalid
+
+		if (on->cn_block==NULL) {
+			on->cn_block = (DWORD far *)AlocaMemoria(dd->bsb);
+			if (on->cn_block==NULL)
+				return block; // invalid
+		}
+
+		if (on->cn_block_number != on->inode.block[12]) {
+			//kprintf("Block %X\r\n", (WORD)on->inode.block[12]);
+			if(!fsext2iReadBlock(drive, on->inode.block[12], (char far *)on->cn_block)) {
+				return block; // invalid
+			}
+			on->cn_block_number = on->inode.block[12];
+			//kprintf("File Block 13 %X\r\n", (WORD)on->cn_block[0]);
+		}
+
+		block = on->cn_block[cluster-13];
 	}
 	
-	return fsext2OpenByInode(drive, i_n, 0);
+	return block;
 }
 
 int fsext2LoadCluster(WORD bloco, DWORD far *o, DWORD far *r)
@@ -465,40 +744,30 @@ int fsext2LoadCluster(WORD bloco, DWORD far *o, DWORD far *r)
 
 	if (cluster == BlocoControlo[bloco]->Cluster)
 		return 1;
-		
+
 	on = (FSEXT2_OPEN_INODE far *)BlocoControlo[bloco]->fsd;
 
-	if (cluster < 13) {
-		block = on->inode.block[cluster-1];
-	} else if (cluster < 269 ) {
-		if (!on->inode.block[12])
-			return 0;
-
-		if (on->cn_block==NULL) {
-			on->cn_block = (DWORD far *)AlocaMemoria(dd->bsb);
-			if (on->cn_block==NULL)
-				return 0;
-		}
-
-		if (on->cn_block_number != on->inode.block[12]) {
-			//kprintf("Block %X\r\n", (WORD)on->inode.block[12]);
-			if(!fsext2iReadBlock(drive, on->inode.block[12], on->cn_block)) {
+	if (BlocoControlo[bloco]->dirty && BlocoControlo[bloco]->Cluster) {
+		DWORD dirty_block = fsext2iClusterToBlock(drive, on, BlocoControlo[bloco]->Cluster);
+		if (dirty_block>0 && dirty_block < 0xFFFFFFFFL) {
+			if (!fsext2iWriteBlock(drive, dirty_block, BlocoControlo[bloco]->Buffer)) {
 				return 0;
 			}
-			on->cn_block_number = on->inode.block[12];
-			//kprintf("File Block 13 %X\r\n", (WORD)on->cn_block[0]);
-
 		}
-
-
-		block = on->cn_block[cluster-13];
-
+		BlocoControlo[bloco]->dirty = 0;
 	}
-	else {
+	
+	block = fsext2iClusterToBlock(drive, on, cluster);
+	if (block==0xFFFFFFFFL)
 		return 0;
-	}
 
 	if (!block) {
+		/*
+		if (write) {
+			block = alloc_block();
+		}
+		*/
+
 		// sparse file, set buffer to zeroes
 		_fmemset(BlocoControlo[bloco]->Buffer, 0, dd->bsb);
 		BlocoControlo[bloco]->Cluster=cluster;
@@ -515,9 +784,40 @@ int fsext2LoadCluster(WORD bloco, DWORD far *o, DWORD far *r)
 
 WORD fsext2EscreverCaracter(WORD bloco,BYTE caracter)
 {
-	(void)bloco;
-	(void)caracter;
-	ERRO=EUNSUP;
+	DWORD r=0;
+	DWORD o=0;
+
+	ERRO=FALSE;
+	if((FP_SEG(BlocoControlo[bloco])==0)||(bloco>=FILES))
+	{
+		ERRO=EBADF;
+		return 0;
+	}
+
+        if(!(BlocoControlo[bloco]->Modo&ESCREVER))
+        {
+                ERRO=EACCES;
+                return 0;
+        }
+
+        if(!(BlocoControlo[bloco]->Fpos<BlocoControlo[bloco]->Tamanho))
+        {
+                if(!(BlocoControlo[bloco]->Modo&EXPANDIR))
+                {
+                        return __EOF;
+                }
+        }
+
+	if(!fsext2LoadCluster(bloco, &o, &r)) {
+		ERRO=EFAULT;
+		return 0;	
+	}
+
+	BlocoControlo[bloco]->Fpos++;
+
+	BlocoControlo[bloco]->dirty=1;
+	BlocoControlo[bloco]->Buffer[o]=caracter;
+	
 	return 0;
 }
 
@@ -587,6 +887,34 @@ BYTE fsext2iReadBlock(BYTE drive, DWORD block, BYTE far *buffer)
 
 }
 
+BYTE fsext2iWriteBlock(BYTE drive, DWORD block, BYTE far *buffer)
+{
+	DWORD sector;
+	FSEXT2_DATA far *dd;
+	int i;
+	ERRO=FALSE;
+
+	dd = fsext2DriveData(drive);
+	if (!dd) {
+		ERRO=EINVDRV;
+		return 0;
+	}
+
+	sector = longmul2(block, dd->bss);
+
+	for (i=0; i<dd->bss; i++) {
+		if(!EscreverSector(drive, sector+i, buffer)) {
+			ERRO=EINOUT;
+			return 0;
+		}
+		buffer = buffer + 512;
+	}
+
+	return 1;
+
+}
+
+
 void fsext2LerCluster(BYTE drive,WORD cluster,BYTE far *buffer)
 {
 	fsext2iReadBlock(drive, cluster, buffer);
@@ -641,10 +969,43 @@ int fsext2iGetInode(BYTE drive, DWORD inode, FSEXT2_INODE far *p)
 	}
 
 	_fmemcpy(p, n, sizeof(FSEXT2_INODE));
-//	kprintf("Mode %X\r\n", n->mode);
-//	kprintf("Size %u\r\n", (WORD)n->size);
 
 	return 1;	
+}
+
+DWORD fsext2iMknode(BYTE drive, WORD mode)
+{
+	DWORD inode; 
+	FSEXT2_DATA far *dd;
+	DWORD block;
+	WORD pos;
+	FSEXT2_INODE far *n;
+
+	dd = fsext2DriveData(drive);
+	if (!dd)
+		return 0;
+
+	inode = AllocInode(drive); 
+	if (inode==0L)
+	       return 0;
+	inode--;
+
+	block = ((WORD)inode/8)+dd->g->inode_table;
+	pos = inode&0x7;
+
+	n = (FSEXT2_INODE far *)dd->work_block;
+	n+=pos;
+
+	if(!fsext2iReadWorkBlock(drive, block)) {
+		return 0;
+	}
+
+	dd->dirty = 1;
+	if (mode == 0) {
+		mode = 0x8000 | 0666;
+	}
+	n->mode = mode;
+	return inode + 1;
 }
 
 WORD fsext2OpenByInode(BYTE drive, DWORD inode, BYTE modo)
@@ -705,6 +1066,7 @@ WORD fsext2OpenByInode(BYTE drive, DWORD inode, BYTE modo)
 	BlocoControlo[bloco]->Modo=modo;
 	BlocoControlo[bloco]->Fpos=0;
 	BlocoControlo[bloco]->Drive=drive;
+	BlocoControlo[bloco]->dirty=0;
 	BlocoControlo[bloco]->Buffer=enderecobuffer;
 	BlocoControlo[bloco]->FCluster=on->inode.block[0];
 	BlocoControlo[bloco]->Cluster=0;
@@ -728,7 +1090,7 @@ void fsext2PosicionarFicheiro(WORD bloco,long deslocamento,BYTE modo)
 	if((FP_SEG(BlocoControlo[bloco])==0)||(bloco>=FILES))
 	{
 		ERRO=EBADF;
-		return 0;
+		return;
 	}
 
 	switch(modo)
@@ -833,18 +1195,61 @@ WORD fsext2LerFicheiro(WORD bloco, char far *ptr, WORD len)
 
 WORD fsext2EscreverFicheiro(WORD bloco, char far *ptr, WORD len)
 {
-	(void)bloco;
-	(void)ptr;
-	(void)len;
-	ERRO=EUNSUP;
-	return 0;
+	DWORD r=0;
+	DWORD o=0;
+	WORD cnt=0;
+
+	ERRO=FALSE;
+	if((FP_SEG(BlocoControlo[bloco])==0)||(bloco>=FILES))
+	{
+		ERRO=EBADF;
+		return 0;
+	}
+
+        if(!(BlocoControlo[bloco]->Modo&ESCREVER))
+        {
+                ERRO=EACCES;
+                return 0;
+        }
+
+        if(BlocoControlo[bloco]->Fpos+len>BlocoControlo[bloco]->Tamanho)
+        {
+                if(!(BlocoControlo[bloco]->Modo&EXPANDIR))
+                {
+			if (BlocoControlo[bloco]->Tamanho > BlocoControlo[bloco]->Fpos)
+				len = BlocoControlo[bloco]->Tamanho - BlocoControlo[bloco]->Fpos;
+			else
+                        	return 0;
+                }
+        }
+
+	while(len) {
+		if(!fsext2LoadCluster(bloco, &o, &r)) {
+	       		ERRO=EFAULT;
+			return cnt;
+		}
+
+		if (r==0)
+			return 0;
+		if (r > len) {
+			r=len;
+		}
+		_fmemcpy(BlocoControlo[bloco]->Buffer+o, ptr, r);
+		len -= r;
+		ptr += r;
+		cnt += r;
+		BlocoControlo[bloco]->dirty = 1;
+		BlocoControlo[bloco]->Fpos += r;
+	}
+
+	return cnt;
 }
 
 
 static IFS fs_ext2 = {
 	fsext2CriarFicheiro,
 	fsext2Chmod,
-	fsext2Renomear,
+	fsext2Renomear, // Next
 	fsext2Eliminar,
 	fsext2FecharFicheiro,
 	fsext2FlushFicheiro,

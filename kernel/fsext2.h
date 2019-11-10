@@ -82,8 +82,10 @@ typedef struct {
 	WORD bsb; // block size bytes
 	BYTE bss; // block size 512 units
 	DWORD work_block_number; //which block is cached
-	BYTE far *work_block; //current loaded block
-	BYTE dirty;           //work block is dirty
+	BYTE far *work_block;    //current loaded block
+	BYTE dirty;              //work block is dirty
+	BYTE far *block_bitmap;
+	BYTE far *inode_bitmap;
 
 	BYTE SectorCluster;
 	WORD FATSector;
@@ -104,7 +106,7 @@ WORD fsext2MontarDrive(BYTE drive);                                 //user
 WORD fsext2DesMontarDrive(BYTE drive);                              //user
 WORD fsext2SyncDrive(BYTE drive);                                      //user
 void fsext2CriarFicheiro(BYTE drive,BYTE far *nome,BYTE attr);        //user
-BYTE fsext2DirProcura(BYTE drive,TDIR_RECORD far *rec,BYTE first);    //user
+BYTE fsext2DirProcura(BYTE drive, char far *folder, TDIR_RECORD far *rec,BYTE first);    //user
 void fsext2Chmod(BYTE drive,BYTE far *nome,BYTE attr);                //user
 void fsext2Renomear(BYTE drive,BYTE far *nome,BYTE far *novo_nome);   //user
 void fsext2Eliminar(BYTE drive,BYTE far *nome);                       //user

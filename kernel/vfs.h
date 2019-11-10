@@ -39,7 +39,7 @@ DWORD Ficheiro_Size(WORD bloco);                                    //user
 
 WORD DesMontarDrive(BYTE drive);
 WORD SyncDrive(BYTE drive);
-BYTE DirProcura(BYTE drive, TDIR_RECORD far *rec, BYTE first);
+BYTE DirProcura(BYTE drive, char far *folder, TDIR_RECORD far *rec, BYTE first);
 void CLOSEFS();
 WORD INITFS();
 #endif

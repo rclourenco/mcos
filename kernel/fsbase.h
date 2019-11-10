@@ -56,7 +56,7 @@ typedef struct {
 
 	WORD (*vDesMontarDrive)(BYTE drive);
 	WORD (*vSyncDrive)(BYTE drive);
-	BYTE (*vDirProcura)(BYTE drive, TDIR_RECORD far *rec, BYTE first);
+	BYTE (*vDirProcura)(BYTE drive, char far *folder, TDIR_RECORD far *rec, BYTE first);
 } IFS;
 
 IFS far *fsbaseGetDriver(BYTE drive);
@@ -87,6 +87,7 @@ typedef struct {
 	DWORD Tamanho;
 	DWORD Inode;
 	BYTE Modo;
+	BYTE dirty; // buffer has data to be written
 	BYTE far *Buffer;
 	void far *fsd;
 	WORD Procid;

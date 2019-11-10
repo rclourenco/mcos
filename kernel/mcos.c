@@ -222,7 +222,7 @@ void SetPSP(WORD psp,char far *nome,char far *cmd)
 	/* TODO: descriptor process->kernel map */
 	p=(unsigned char far *)MK_FP(psp,0x70);
 	i=0;
-	while(nome[i])
+	while(nome[i] && i<12)
 	{
 		p[i]=nome[i];
 		i++;
@@ -623,7 +623,7 @@ void interrupt Dispatcher(unsigned bp, unsigned di,unsigned si,
 		case 26:ax=DesMontarDrive(al);break;
 		case 27:ax=SyncDrive(al);break;
 		case 28:ax=Montada(al);break;
-		case 29:ax=DirProcura(al,(TDIR_RECORD far *)MK_FP(es,dx),bl);break;
+		case 29:ax=DirProcura(al, "", (TDIR_RECORD far *)MK_FP(es,dx),bl);break;
 		
 		case 30:ax=AbrirFicheiro(al,(BYTE far *)MK_FP(es,dx),bl);break; // TODO deal with devices
 		case 31:ax=EscreverCaracter(bx,al);break; 
