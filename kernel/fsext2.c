@@ -3,13 +3,14 @@
 #include "mcosmem.h"
 
 int fsext2iGetInode(BYTE drive, DWORD inode, FSEXT2_INODE far *p);
+int fsext2iSaveInode(BYTE drive, DWORD inode, FSEXT2_INODE far *p);
 WORD fsext2OpenByInode(BYTE drive, DWORD inode, BYTE modo);
 int fsext2LoadCluster(WORD bloco, DWORD far *o, DWORD far *r);
 BYTE fsext2iReadBlock(BYTE drive, DWORD block, BYTE far *buffer);
 BYTE fsext2iWriteBlock(BYTE drive, DWORD block, BYTE far *buffer);
 DWORD fsext2iFindFile(BYTE drive, char far *name);
-DWORD fsext2iClusterToBlock(BYTE drive, FSEXT2_OPEN_INODE far *on, DWORD cluster);
-DWORD fsext2iMknode(BYTE drive, WORD mode);
+DWORD fsext2iClusterToBlock(BYTE drive, FSEXT2_OPEN_INODE far *on, DWORD cluster, BYTE to_alloc);
+DWORD fsext2iMknode(BYTE drive, WORD mode, char far *path);
 
 FSEXT2_DATA far * fsext2DriveData(BYTE drive)
 {
@@ -47,6 +48,43 @@ DWORD AllocInode(BYTE drive)
 			dd->inode_bitmap[nf] |= (1<<i);
 			dd->s->free_inodes_count--;
 			dd->g->free_inodes--;
+			return nf * 8L + i + 1;
+		}
+	}
+	return 0;
+}
+
+DWORD AllocBlock(BYTE drive)
+{
+	DWORD nf = 0;
+	DWORD i;
+	FSEXT2_DATA far *dd = fsext2DriveData(drive);
+	
+	if (!dd)
+		return 0;
+
+	nf = dd->s->blocks_count / 8L + (dd->s->blocks_count%8L ? 1L : 0L);
+//	kprintf("NF: %lu\r\n", nf);
+	for(i=0;i<nf;i++) {
+		//kprintf("%X ", dd->block_bitmap[i]);
+		if (dd->block_bitmap[i]<0xFF) {
+			break;
+		}
+	}
+	//kprintf("Free At %lu\r\n", i);
+	if (i==nf)
+		return 0;
+
+	nf = i;
+
+//	kprintf("> %X\r\n", dd->block_bitmap[nf] );
+
+	for(i=0;i<8;i++) {
+//		kprintf("%lu: %X\r\n", i, ((dd->block_bitmap[nf]>>i) & 1));
+		if (((dd->block_bitmap[nf]>>i) & 1)==0) {
+			dd->block_bitmap[nf] |= (1<<i);
+			dd->s->free_blocks_count--;
+			dd->g->free_blocks--;
 			return nf * 8L + i + 1;
 		}
 	}
@@ -199,7 +237,9 @@ WORD fsext2DesMontarDrive(BYTE drive)
 
 	if (drive < MAXDRIVES)
 		Drive[drive].Montada=FALSE;
-	
+
+	fsext2SyncDrive(drive);
+
 	dd = fsext2DriveData(drive);
 	if (!dd)
 		return 1;
@@ -215,9 +255,48 @@ WORD fsext2DesMontarDrive(BYTE drive)
 
 WORD fsext2SyncDrive(BYTE drive)
 {
+	DWORD numl, i;
+
 	FSEXT2_DATA far *dd;
 
-	(void)drive;
+	dd = fsext2DriveData(drive);
+	if (!dd)
+		return 0;
+
+	// TODO save super block
+	// TODO save group block
+
+	// Save Block Bitmap
+	numl = dd->g->inode_bitmap - dd->g->block_bitmap;
+
+	if (dd->block_bitmap) {
+		for (i=0;i<numl;i++) {
+			char far *ptr = (char far *)dd->block_bitmap;
+			if(!fsext2iWriteBlock(drive, dd->g->block_bitmap+i, ptr)) {
+				ERRO=EINOUT;
+				goto _abort_sync;
+			}
+			ptr += dd->bsb;
+		}
+	}
+
+	// Load Inode Bitmap
+	numl = dd->g->inode_table  - dd->g->inode_bitmap;
+
+	if (dd->inode_bitmap) {
+		for (i=0;i<numl;i++) {
+			char far *ptr = (char far *)dd->inode_bitmap;
+			if(!fsext2iWriteBlock(drive, dd->g->inode_bitmap+i, ptr)) {
+				ERRO=EINOUT;
+				goto _abort_sync;
+			}
+			ptr += dd->bsb;
+		}
+	}
+
+	return 1;
+	
+_abort_sync:
 	return 0;
 }
 
@@ -515,7 +594,7 @@ void fsext2FlushFicheiro(WORD bloco)
 	on = (FSEXT2_OPEN_INODE far *)BlocoControlo[bloco]->fsd;
 	
 	if (BlocoControlo[bloco]->dirty && BlocoControlo[bloco]->Cluster) {
-		DWORD dirty_block = fsext2iClusterToBlock(drive, on, BlocoControlo[bloco]->Cluster);
+		DWORD dirty_block = fsext2iClusterToBlock(drive, on, BlocoControlo[bloco]->Cluster, TRUE);
 		if (dirty_block>0 && dirty_block < 0xFFFFFFFFL) {
 			if (!fsext2iWriteBlock(drive, dirty_block, BlocoControlo[bloco]->Buffer)) {
 				ERRO=EINOUT;
@@ -525,8 +604,18 @@ void fsext2FlushFicheiro(WORD bloco)
 		BlocoControlo[bloco]->dirty = 0;
 	}
 
-	// Write Inode and pointer blocks
-	// Sync
+	on->inode.size = BlocoControlo[bloco]->Tamanho;
+	fsext2iSaveInode(drive, on->inode_number, &on->inode);
+
+	if (on->cn_block_number && on->cn_block) {
+		if(!fsext2iWriteBlock(drive, on->cn_block_number, (char far *)on->cn_block)) {
+			//return block; // invalid
+		}
+	}
+
+	//  TODO save pointer blocks
+	
+	fsext2SyncDrive(drive);
 }
 
 BYTE fsext2GetAttr(BYTE drive,BYTE far *nome)
@@ -570,24 +659,9 @@ int fsext2iLink(BYTE drive, DWORD i_n, BYTE far *path)
 	while( fsext2LerFicheiro(b, (char far *)&dirll, sizeof(dirll))==sizeof(dirll) ) {
 		WORD rest;
 
-	//	int i=0;
 		if(fsext2LerFicheiro(b, (char far *)dirfname, dirll.name_len)!=dirll.name_len) {
 			break;
 		}
-
-		/*
-		dirfname[dirll.name_len]='\0';
-		while(name[i]==dirfname[i]) {
-			if (name[i]=='\0') {
-				break;
-			}
-			i++;
-		}
-		if (i>0 && name[i]=='\0') {
-		       i_n = dirll.inode;
-		       break;
-	      	}
- 		*/		
 
 		rest = dirll.rec_len - dirll.name_len - sizeof(dirll);
 		padb = 4 - dirll.name_len % 4;
@@ -619,6 +693,7 @@ int fsext2iLink(BYTE drive, DWORD i_n, BYTE far *path)
 		dirll.rec_len = new_rec_len;
 		dirll.inode = i_n;
 		dirll.name_len = nl;
+		dirll.file_type = 1;
 		if (fsext2EscreverFicheiro(b, (char far *)&dirll, sizeof(dirll))!=sizeof(dirll)) {
 			ERRO = EFAULT;
 			return 0;
@@ -659,12 +734,11 @@ WORD fsext2AbrirFicheiro(BYTE drive,BYTE far *nome,BYTE modo)
 	case 6:
 	case 2:
 		ERRO=FALSE;
-		i_n = fsext2iMknode(drive, 0); 
+		i_n = fsext2iMknode(drive, 0, nome); 
 		if (!i_n) {
 			ERRO=EFAULT;
 			return 0xFFFF;
 		}	
-		fsext2iLink(drive, i_n, nome);
 		kprintf("Inode %lu\r\n", i_n);
 		handle = fsext2OpenByInode(drive, i_n, modo);
 		kprintf("Handle %lu\r\n", handle);
@@ -679,7 +753,7 @@ WORD fsext2AbrirFicheiro(BYTE drive,BYTE far *nome,BYTE modo)
 	return 0xFFFF;
 }
 
-DWORD fsext2iClusterToBlock(BYTE drive, FSEXT2_OPEN_INODE far *on, DWORD cluster)
+DWORD fsext2iClusterToBlock(BYTE drive, FSEXT2_OPEN_INODE far *on, DWORD cluster, BYTE to_alloc)
 {
 	FSEXT2_DATA far *dd;
 	DWORD block = 0xFFFFFFFFL;
@@ -689,10 +763,38 @@ DWORD fsext2iClusterToBlock(BYTE drive, FSEXT2_OPEN_INODE far *on, DWORD cluster
 		return block; // invalid
 
 	if (cluster < 13) {
+//		kprintf("Cluster: %lu Alloc? %u\r\n", cluster, to_alloc);
+
 		block = on->inode.block[cluster-1];
-	} else if (cluster < 269 ) {
-		if (!on->inode.block[12])
-			return block; // invalid
+		if (!block && to_alloc) {
+			block = on->inode.block[cluster-1] = AllocBlock(drive);
+		}
+
+		return block;
+	}
+
+//	kprintf("Extended Cluster: %lu Alloc? %u\r\n", cluster, to_alloc);
+
+	if (cluster < 269) {
+		BYTE clear=0;
+
+	//	kprintf("Step 0\r\n");
+
+		if (!on->inode.block[12]) {
+			if (to_alloc) {
+				on->inode.block[12] = AllocBlock(drive);
+		//		kprintf("Indirect Block %lu\r\n", on->inode.block[12]);
+
+				clear = 1;
+
+				if (!on->inode.block[12])
+					return block; //invalid
+			} 
+			else if (!on->inode.block[12])
+				return 0; // empty
+		}
+
+//		kprintf("Step 1\r\n");
 
 		if (on->cn_block==NULL) {
 			on->cn_block = (DWORD far *)AlocaMemoria(dd->bsb);
@@ -700,6 +802,13 @@ DWORD fsext2iClusterToBlock(BYTE drive, FSEXT2_OPEN_INODE far *on, DWORD cluster
 				return block; // invalid
 		}
 
+//		kprintf("Step 2\r\n");
+
+		if (clear) {
+			_fmemset(on->cn_block, 0, dd->bsb);
+			on->cn_block_number = on->inode.block[12];
+		}
+		
 		if (on->cn_block_number != on->inode.block[12]) {
 			//kprintf("Block %X\r\n", (WORD)on->inode.block[12]);
 			if(!fsext2iReadBlock(drive, on->inode.block[12], (char far *)on->cn_block)) {
@@ -709,9 +818,17 @@ DWORD fsext2iClusterToBlock(BYTE drive, FSEXT2_OPEN_INODE far *on, DWORD cluster
 			//kprintf("File Block 13 %X\r\n", (WORD)on->cn_block[0]);
 		}
 
+//		kprintf("Step 3\r\n");
+
 		block = on->cn_block[cluster-13];
+		if (!block && to_alloc) {
+			block = on->cn_block[cluster-13] = AllocBlock(drive);
+		}
+
 	}
-	
+
+//	kprintf("Result Block %lu\r\n", block);
+
 	return block;
 }
 
@@ -748,7 +865,7 @@ int fsext2LoadCluster(WORD bloco, DWORD far *o, DWORD far *r)
 	on = (FSEXT2_OPEN_INODE far *)BlocoControlo[bloco]->fsd;
 
 	if (BlocoControlo[bloco]->dirty && BlocoControlo[bloco]->Cluster) {
-		DWORD dirty_block = fsext2iClusterToBlock(drive, on, BlocoControlo[bloco]->Cluster);
+		DWORD dirty_block = fsext2iClusterToBlock(drive, on, BlocoControlo[bloco]->Cluster, TRUE);
 		if (dirty_block>0 && dirty_block < 0xFFFFFFFFL) {
 			if (!fsext2iWriteBlock(drive, dirty_block, BlocoControlo[bloco]->Buffer)) {
 				return 0;
@@ -757,17 +874,11 @@ int fsext2LoadCluster(WORD bloco, DWORD far *o, DWORD far *r)
 		BlocoControlo[bloco]->dirty = 0;
 	}
 	
-	block = fsext2iClusterToBlock(drive, on, cluster);
+	block = fsext2iClusterToBlock(drive, on, cluster, FALSE);
 	if (block==0xFFFFFFFFL)
 		return 0;
 
 	if (!block) {
-		/*
-		if (write) {
-			block = alloc_block();
-		}
-		*/
-
 		// sparse file, set buffer to zeroes
 		_fmemset(BlocoControlo[bloco]->Buffer, 0, dd->bsb);
 		BlocoControlo[bloco]->Cluster=cluster;
@@ -817,7 +928,11 @@ WORD fsext2EscreverCaracter(WORD bloco,BYTE caracter)
 
 	BlocoControlo[bloco]->dirty=1;
 	BlocoControlo[bloco]->Buffer[o]=caracter;
-	
+
+	if (BlocoControlo[bloco]->Fpos > BlocoControlo[bloco]->Tamanho) {
+		BlocoControlo[bloco]->Tamanho = BlocoControlo[bloco]->Fpos;
+	}
+
 	return 0;
 }
 
@@ -932,9 +1047,11 @@ BYTE fsext2iReadWorkBlock(BYTE drive, DWORD block)
 		return 1;
 
 	if (dd->dirty) {
-		// write current
+		if(!fsext2iWriteBlock(drive, dd->work_block_number, dd->work_block)) {
+			return 0;
+		}
+		dd->dirty=0;
 	}
-
 	
 	if(!fsext2iReadBlock(drive, block, dd->work_block)) {
 		return 0;
@@ -943,8 +1060,33 @@ BYTE fsext2iReadWorkBlock(BYTE drive, DWORD block)
 	dd->work_block_number=block;
 
 	return 1;
-
 }
+
+BYTE fsext2iWriteWorkBlock(BYTE drive)
+{
+	FSEXT2_DATA far *dd;	
+	dd = fsext2DriveData(drive);
+
+	if (!dd)
+		return 0;
+
+	if (!dd->work_block)
+		return 1;
+
+	if (!dd->dirty)
+		return 1;
+	
+	
+	if(!fsext2iWriteBlock(drive, dd->work_block_number, dd->work_block)) {
+		return 0;
+	}
+
+	dd->dirty = 0;
+
+	return 1;
+}
+
+
 
 int fsext2iGetInode(BYTE drive, DWORD inode, FSEXT2_INODE far *p)
 {
@@ -973,13 +1115,52 @@ int fsext2iGetInode(BYTE drive, DWORD inode, FSEXT2_INODE far *p)
 	return 1;	
 }
 
-DWORD fsext2iMknode(BYTE drive, WORD mode)
+int fsext2iSaveInode(BYTE drive, DWORD inode, FSEXT2_INODE far *p)
+{
+	FSEXT2_DATA far *dd;
+	DWORD block;
+	WORD pos;
+	FSEXT2_INODE far *n;
+
+	if (inode==0L)
+	       return 0;
+	inode--;
+
+	dd = fsext2DriveData(drive);
+
+	block = ((WORD)inode/8)+dd->g->inode_table;
+	pos = inode&0x7;
+
+	n = (FSEXT2_INODE far *)dd->work_block;
+	n+=pos;
+	if(!fsext2iReadWorkBlock(drive, block)) {
+		return 0;
+	}
+
+	if (n!=p)
+		_fmemcpy(n, p, sizeof(FSEXT2_INODE));
+
+	dd->dirty=1;
+
+	if(!fsext2iWriteWorkBlock(drive)) {
+		return 0;
+	}
+
+	fsext2SyncDrive(drive);
+
+	return 1;
+}
+
+
+DWORD fsext2iMknode(BYTE drive, WORD mode, char far *path)
 {
 	DWORD inode; 
 	FSEXT2_DATA far *dd;
 	DWORD block;
 	WORD pos;
 	FSEXT2_INODE far *n;
+	BYTE far *x;
+	WORD j;
 
 	dd = fsext2DriveData(drive);
 	if (!dd)
@@ -996,16 +1177,76 @@ DWORD fsext2iMknode(BYTE drive, WORD mode)
 	n = (FSEXT2_INODE far *)dd->work_block;
 	n+=pos;
 
+	x = (BYTE far *)n;
+
 	if(!fsext2iReadWorkBlock(drive, block)) {
 		return 0;
 	}
 
+	/*
+	for(j=0;j<128;j++) 
+		kprintf("%X ", x[j]);
+	kprintf("\r\n");
+	*/
+
+	// clear
+	_fmemset(n, 0, sizeof(FSEXT2_INODE));
+
 	dd->dirty = 1;
 	if (mode == 0) {
-		mode = 0x8000 | 0666;
+		mode = 0x8000 | 0x180 | 0x30 | 0x6;
 	}
+
+	
+	kprintf("New Inode on Block %lu Offset %u\r\n", block, pos);
+	kprintf(">> Mode %X\r\n", mode);
+	
+
 	n->mode = mode;
-	return inode + 1;
+	n->ctime = 2*3600 + 121;
+	n->mtime = n->ctime;
+	inode++;
+
+	if (path) {
+		if(!fsext2iLink(drive, inode, path)) {
+			// TODO free Inode
+			return 0;
+		}
+
+		if(!fsext2iReadWorkBlock(drive, block)) {
+			return 0;
+		}
+
+
+		kprintf(">> Links Before %u\r\n", n->links);
+		n->links++;
+		kprintf(">> Links After %u\r\n", n->links);
+
+		dd->dirty = 1;
+	}
+
+	kprintf(">> Save Inode %u %lX [%lX %lX] %lX\r\n", n->links, dd->work_block, n, x, &n->links);
+
+	/*
+	for(j=0;j<128;j++) 
+		kprintf("%X ", x[j]);
+	kprintf("\r\n");
+	*/
+
+	if(!fsext2iWriteWorkBlock(drive)) {
+		return 0;
+	}
+
+	fsext2SyncDrive(drive);
+	
+
+	/*
+	if(!fsext2iSaveInode(drive, inode, n)) {
+		return 0;
+	}
+	*/
+	
+	return inode;
 }
 
 WORD fsext2OpenByInode(BYTE drive, DWORD inode, BYTE modo)
@@ -1240,6 +1481,9 @@ WORD fsext2EscreverFicheiro(WORD bloco, char far *ptr, WORD len)
 		cnt += r;
 		BlocoControlo[bloco]->dirty = 1;
 		BlocoControlo[bloco]->Fpos += r;
+		if (BlocoControlo[bloco]->Fpos > BlocoControlo[bloco]->Tamanho) {
+			BlocoControlo[bloco]->Tamanho = BlocoControlo[bloco]->Fpos;
+		}
 	}
 
 	return cnt;

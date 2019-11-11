@@ -12,6 +12,7 @@ char prompt1[]="[MCOS]$ ";
 char prompt2[]="[MCOS A:]$ ";
 
 void Debug();
+void Copy();
 
 
 void shell()
@@ -63,6 +64,8 @@ void getcmd()
 			Sync();
 		else if(!Strcmp(comando,"!debug"))
 			Debug();
+		else if(!Strcmp(comando,"!copy"))
+			Copy();
 		else if(comando[0]) Executar();
 	}
 }
@@ -694,13 +697,108 @@ void Ed()
 		escreve_erro();
 }
 
+void Copy()
+{
+	char *str_p = argumento;
+	char *argv[10];
+	int argc=0;
+	int i;
+	char *cur;
+	char *p1;
+	char *p2;
+	BYTE d1=CurDrv;
+	BYTE d2=CurDrv;
+	WORD ho,hi;
+	WORD ch;
+
+
+	while ( argc < 10 && (cur=token(&str_p))!=NULL ) {
+		argv[argc++]=cur;
+	}
+
+	if (argc<2) {
+		return;
+	}
+
+	p1 = argv[0];
+	p2 = argv[1];
+
+	if (p1[1]==':') {
+		switch(p1[0]) {
+		case 'a':
+		case 'A': d1=0; break;
+		case 'b':
+		case 'B': d1=1; break;
+		}
+		p1+=2;
+	}
+
+	if (p2[1]==':') {
+		switch(p2[0]) {
+		case 'a':
+		case 'A': d2=0; break;
+		case 'b':
+		case 'B': d2=1; break;
+		}
+		p2+=2;
+	}
+
+	ApagaErro();
+	kprintf("COPY %s %s\r\n", argv[0], argv[1]);
+	ho=AbrirFicheiro(d2,p2,ESCREVER|CRIAR_F|EXPANDIR);
+	if((ho>=FILES)||(ERRO))
+	{
+		write_str("Erro ao criar ficheiro de destino...\n");
+		escreve_erro();
+		return;
+	}
+
+	hi=AbrirFicheiro(d1,p1,LEITURA);
+	if((hi>=FILES)||(ERRO))
+	{
+		write_str("Erro a abrir ficheiro de origem...\n");
+		escreve_erro();
+		FecharFicheiro(ho);
+		return;
+	}
+
+	while(!Fim_Ficheiro(hi))
+	{
+		ch=LerCaracter(hi);
+		if(ERRO) break;
+		if (ch>0xFF) break;
+		EscreverCaracter(ho, ch);
+		if(ERRO) break;
+	}
+
+	escreve_erro();
+
+	FecharFicheiro(hi);
+	FecharFicheiro(ho);
+
+
+}
+
 void Type()
 {
 	WORD handle;
 	WORD ch;
 	WORD lines;
+	char *p=argumento;
+	BYTE drive=CurDrv;
+
+	if (p[1]==':') {
+		switch(p[0]) {
+		case 'a':
+		case 'A': drive=0; break;
+		case 'b':
+		case 'B': drive=1; break;
+		}
+		p+=2;
+	}
+
 	ApagaErro();
-	handle=AbrirFicheiro(CurDrv,argumento,LEITURA);
+	handle=AbrirFicheiro(drive,p,LEITURA);
 	if((handle>=FILES)||(ERRO))
 	{
 		write_str("Erro a abrir ficheiro de origem...\n");
